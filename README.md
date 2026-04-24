@@ -50,6 +50,12 @@ This will:
 - **Frontend:** `cd frontend && npm run test` or `make test-frontend`. Coverage HTML: [`frontend/coverage/index.html`](./frontend/coverage/index.html) after `make test-frontend-coverage`.
 - Coverage is **report-only** (no enforced minimum gate).
 
+### Pull request merge gate (GitHub)
+
+- Pull requests targeting `main` must pass the required GitHub checks before merge.
+- Required checks come from `.github/workflows/ci.yml`: `backend-tests` and `frontend-tests`.
+- Branches must also be up to date with `main` before merge is allowed.
+
 ## Configuration
 
 Copy and edit [`.env.example`](./.env.example) to `.env` (done automatically on first `make dev`). The API reads `DATABASE_URL` and `REDIS_URL`; the browser uses `NEXT_PUBLIC_API_URL` (also exported in `scripts/dev.sh` for `next dev`).
