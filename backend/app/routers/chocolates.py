@@ -20,10 +20,18 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _normalize_sort_key(sort: str | None) -> str:
+    """Match query behavior: unknown sort values fall back to name ordering."""
+    s = sort or "name"
+    if s in ("price_asc", "price_desc", "cacao_desc", "name"):
+        return s
+    return "name"
+
+
 def _list_cache_key(tag: list[str] | None, sort: str | None) -> str:
     t = tag or []
     tkey = ",".join(sorted(x.strip() for x in t if x and x.strip()))
-    return f"chocolates:list:{tkey}:{sort or 'name'}"
+    return f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}"
 
 
 def _detail_cache_key(cid: UUID) -> str:
@@ -57,7 +65,7 @@ async def list_chocolates(
         literals = [literal(s, type_=String(64)) for s in cleaned]
         any_of = array(literals)
         stmt = stmt.where(Chocolate.tags.op("&&")(any_of))
-    s = sort or "name"
+    s = _normalize_sort_key(sort)
     if s == "price_asc":
         stmt = stmt.order_by(asc(Chocolate.price_cents), asc(Chocolate.name))
     elif s == "price_desc":
