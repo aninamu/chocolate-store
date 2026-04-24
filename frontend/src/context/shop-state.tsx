@@ -83,9 +83,19 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const setQty = useCallback((chocolateId: string, quantity: number) => {
     setCart((prev) => {
-      const rest = prev.filter((l) => l.chocolateId !== chocolateId);
-      const next: CartLine[] =
-        quantity <= 0 ? rest : [...rest, { chocolateId, quantity }];
+      const index = prev.findIndex((l) => l.chocolateId === chocolateId);
+      let next: CartLine[] = prev;
+
+      if (index === -1) {
+        next = quantity <= 0 ? prev : [...prev, { chocolateId, quantity }];
+      } else if (quantity <= 0) {
+        next = prev.filter((_, i) => i !== index);
+      } else {
+        next = prev.map((line, i) =>
+          i === index ? { ...line, quantity } : line
+        );
+      }
+
       writeLocal(CART_KEY, next);
       return next;
     });
@@ -94,12 +104,22 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const addToCart = useCallback(
     (chocolateId: string, quantity = 1) => {
       setCart((prev) => {
-        const cur = prev.find((l) => l.chocolateId === chocolateId);
-        const q = (cur?.quantity ?? 0) + quantity;
-        const next: CartLine[] = [
-          ...prev.filter((l) => l.chocolateId !== chocolateId),
-          { chocolateId, quantity: q },
-        ].filter((l) => l.quantity > 0);
+        const index = prev.findIndex((l) => l.chocolateId === chocolateId);
+        let next: CartLine[] = prev;
+
+        if (index === -1) {
+          next = quantity <= 0 ? prev : [...prev, { chocolateId, quantity }];
+        } else {
+          const q = prev[index].quantity + quantity;
+          if (q <= 0) {
+            next = prev.filter((_, i) => i !== index);
+          } else {
+            next = prev.map((line, i) =>
+              i === index ? { ...line, quantity: q } : line
+            );
+          }
+        }
+
         writeLocal(CART_KEY, next);
         return next;
       });

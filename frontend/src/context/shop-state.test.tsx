@@ -5,8 +5,16 @@ import { afterEach, describe, expect, it, beforeEach } from "vitest";
 import { ShopProvider, useShop } from "@/context/shop-state";
 
 function Harness() {
-  const { isReady, cart, saved, addToCart, clearCart, toggleSaved, isSaved } =
-    useShop();
+  const {
+    isReady,
+    cart,
+    saved,
+    addToCart,
+    setQty,
+    clearCart,
+    toggleSaved,
+    isSaved,
+  } = useShop();
   return (
     <div>
       <span data-testid="ready">{String(isReady)}</span>
@@ -15,6 +23,12 @@ function Harness() {
       <span data-testid="saved-flag">{String(isSaved("c1"))}</span>
       <button type="button" onClick={() => addToCart("c1", 2)}>
         add
+      </button>
+      <button type="button" onClick={() => addToCart("c2", 1)}>
+        add-c2
+      </button>
+      <button type="button" onClick={() => setQty("c2", 5)}>
+        set-c2-5
       </button>
       <button type="button" onClick={() => clearCart()}>
         clear
@@ -104,5 +118,71 @@ describe("ShopProvider", () => {
     expect(JSON.parse(localStorage.getItem("cs.saved.v1") || "[]")).toEqual([
       "c1",
     ]);
+  });
+
+  it("setQty updates quantity without changing cart order", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 1 },
+        { chocolateId: "c3", quantity: 1 },
+      ])
+    );
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "set-c2-5" }));
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 5 },
+        { chocolateId: "c3", quantity: 1 },
+      ]);
+    });
+  });
+
+  it("addToCart increments existing line without changing cart order", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 1 },
+        { chocolateId: "c3", quantity: 1 },
+      ])
+    );
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "add-c2" }));
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 2 },
+        { chocolateId: "c3", quantity: 1 },
+      ]);
+    });
   });
 });
