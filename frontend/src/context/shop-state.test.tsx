@@ -1,0 +1,108 @@
+import { render, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, beforeEach } from "vitest";
+
+import { ShopProvider, useShop } from "@/context/shop-state";
+
+function Harness() {
+  const { isReady, cart, saved, addToCart, clearCart, toggleSaved, isSaved } =
+    useShop();
+  return (
+    <div>
+      <span data-testid="ready">{String(isReady)}</span>
+      <span data-testid="cart">{JSON.stringify(cart)}</span>
+      <span data-testid="saved">{JSON.stringify(saved)}</span>
+      <span data-testid="saved-flag">{String(isSaved("c1"))}</span>
+      <button type="button" onClick={() => addToCart("c1", 2)}>
+        add
+      </button>
+      <button type="button" onClick={() => clearCart()}>
+        clear
+      </button>
+      <button type="button" onClick={() => toggleSaved("c1")}>
+        toggle
+      </button>
+    </div>
+  );
+}
+
+describe("ShopProvider", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("rehydrates cart from localStorage when ready", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([{ chocolateId: "x", quantity: 3 }])
+    );
+
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+    await waitFor(() =>
+      expect(view.getByTestId("cart").textContent).toContain("x")
+    );
+  });
+
+  it("addToCart merges quantities and persists", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "add" }));
+    await waitFor(() =>
+      expect(view.getByTestId("cart").textContent).toContain('"quantity":2')
+    );
+
+    await user.click(within(container).getByRole("button", { name: "add" }));
+    await waitFor(() =>
+      expect(view.getByTestId("cart").textContent).toContain('"quantity":4')
+    );
+
+    const stored = JSON.parse(localStorage.getItem("cs.cart.v1") || "[]");
+    expect(stored).toEqual([{ chocolateId: "c1", quantity: 4 }]);
+  });
+
+  it("toggleSaved updates saved list", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    expect(view.getByTestId("saved-flag").textContent).toBe("false");
+    await user.click(within(container).getByRole("button", { name: "toggle" }));
+    await waitFor(() =>
+      expect(view.getByTestId("saved-flag").textContent).toBe("true")
+    );
+    expect(JSON.parse(localStorage.getItem("cs.saved.v1") || "[]")).toEqual([
+      "c1",
+    ]);
+  });
+});

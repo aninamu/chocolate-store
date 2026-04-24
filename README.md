@@ -37,6 +37,18 @@ This will:
 | `make nuke-confirm` | `stop` + delete `./.data/` (fresh `initdb` on next `make dev`). |
 | `make psql` | `psql` into the project database. |
 | `make redis-cli` | `redis-cli` to the project Redis. |
+| `make test` | Run backend (`pytest`) and frontend (`vitest`) unit tests. Requires `make setup` first. |
+| `make test-coverage` | Same as `make test`, with coverage reports (terminal + HTML). No minimum thresholds. |
+| `make test-backend` | Backend tests only. |
+| `make test-backend-coverage` | Backend tests with coverage → `backend/htmlcov/`. |
+| `make test-frontend` | Frontend tests only. |
+| `make test-frontend-coverage` | Frontend tests with coverage → `frontend/coverage/`. |
+
+### Tests and coverage
+
+- **Backend:** from the repo root, `make setup` then `make services-up` so Postgres (**55432**) and Redis (**63790**) are listening. API integration tests skip automatically if those ports are closed. Coverage HTML: [`backend/htmlcov/index.html`](./backend/htmlcov/index.html) after `make test-backend-coverage`.
+- **Frontend:** `cd frontend && npm run test` or `make test-frontend`. Coverage HTML: [`frontend/coverage/index.html`](./frontend/coverage/index.html) after `make test-frontend-coverage`.
+- Coverage is **report-only** (no enforced minimum gate).
 
 ## Configuration
 

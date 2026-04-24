@@ -9,6 +9,10 @@ logs/
 **/*.pyc
 **/.pytest_cache/
 .pytest_cache/
+.coverage
+**/.coverage
+backend/htmlcov/
+frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/
 .DS_Store
