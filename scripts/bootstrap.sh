@@ -8,21 +8,8 @@ cd "$ROOT"
 export PGPORT="${PG_PORT:-55432}"
 export PGUSER="${PG_USER:-chocolate}"
 
-add_postgres_bin_to_path() {
-  local brew_prefix=""
-
-  if command -v brew >/dev/null 2>&1; then
-    brew_prefix="$(brew --prefix postgresql@16 2>/dev/null || true)"
-    if [ -d "$brew_prefix/bin" ]; then
-      export PATH="$brew_prefix/bin:$PATH"
-      return
-    fi
-  fi
-
-  if [ -d /usr/lib/postgresql/16/bin ]; then
-    export PATH="/usr/lib/postgresql/16/bin:$PATH"
-  fi
-}
+# shellcheck source=/dev/null
+source "$ROOT/scripts/postgres-path.sh"
 
 need_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
