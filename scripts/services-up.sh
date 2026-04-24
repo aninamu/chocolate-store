@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Start user-level Postgres + Redis, then migrate and seed the database.
+# Start user-level Postgres + Redis, then (re)create a fresh app database from
+# SQLAlchemy models and load seed data. No migrations — the DB is disposable.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -43,11 +44,6 @@ until pg_isready -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -q 2>/dev/null; do
   sleep 0.2
 done
 
-if ! psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres -tAc \
-  "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1; then
-  createdb -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" "$PG_DB"
-fi
-
 # ---- Redis
 REDIS_DIR="$ROOT/.data/redis"
 if [ -f .data/redis/redis.pid ] 2>/dev/null; then
@@ -68,11 +64,15 @@ until redis-cli -p "$REDIS_PORT" ping 2>/dev/null | grep -q PONG; do
   sleep 0.1
 done
 
-# ---- Alembic + seed
-(
-  cd "$ROOT/backend"
-  .venv/bin/alembic upgrade head
-  .venv/bin/python -m app.seed
-)
+# ---- Fresh app DB every startup (no migrations; schema comes from SQLAlchemy models)
+psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
+  -c "DROP DATABASE IF EXISTS \"$PG_DB\";" \
+  -c "CREATE DATABASE \"$PG_DB\";"
+
+# Flush stale cache entries that reference chocolates from a previous run
+redis-cli -p "$REDIS_PORT" FLUSHALL >/dev/null
+
+# Create schema from models and insert seed rows
+( cd "$ROOT/backend" && .venv/bin/python -m app.init_db )
 
 echo "services-up: ok"

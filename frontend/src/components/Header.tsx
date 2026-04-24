@@ -26,7 +26,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
           <Image
-            src="https://images.unsplash.com/photo-1606312619070-d48b4bc89d90?w=64&q=80"
+            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=64&q=80"
             width={32}
             height={32}
             alt=""

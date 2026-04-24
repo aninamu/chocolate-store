@@ -16,7 +16,16 @@ if [ -f .env ]; then
   set +a
 fi
 
+: "${PG_PORT:=55432}"
+: "${PG_USER:=chocolate}"
+: "${PG_DB:=chocolate_store}"
 : "${REDIS_PORT:=63790}"
+
+# Drop the app DB so nothing persists between runs (demo app).
+if [ -d .data/postgres ] && pg_ctl -D .data/postgres status >/dev/null 2>&1; then
+  psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres \
+    -c "DROP DATABASE IF EXISTS \"$PG_DB\";" >/dev/null 2>&1 || true
+fi
 
 if [ -d .data/postgres ]; then
   pg_ctl -D .data/postgres stop -m fast >/dev/null 2>&1 || true

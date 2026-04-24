@@ -1,6 +1,6 @@
 ROOT := $(abspath .)
 
-.PHONY: dev setup services-up services-down stop reset-db nuke psql redis-cli nuke-confirm
+.PHONY: dev setup services-up services-down stop nuke psql redis-cli nuke-confirm
 
 # Full stack: bootstrap → data stores → app servers (stops all on Ctrl-C)
 dev:
@@ -24,11 +24,6 @@ services-down:
 stop:
 	@chmod +x $(ROOT)/scripts/*.sh
 	@./scripts/stop.sh
-
-# Drop application tables and re-apply schema + seed (keeps .data/ cluster)
-reset-db:
-	@chmod +x $(ROOT)/scripts/*.sh
-	@./scripts/reset-db.sh
 
 nuke-confirm:
 	@chmod +x $(ROOT)/scripts/*.sh

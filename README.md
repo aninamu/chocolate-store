@@ -18,7 +18,7 @@ make dev
 This will:
 
 1. **Bootstrap** — create `backend/.venv`, `pip install` the API, `npm install` the frontend, copy `.env.example` → `.env` if needed, and `initdb` a Postgres cluster in `./.data/postgres` the first time.
-2. **Bring data stores up** — start Postgres on **55432** and Redis on **63790** (isolated from any system services), run `alembic upgrade head` and the seed.
+2. **Bring data stores up** — start Postgres on **55432** and Redis on **63790** (isolated from any system services), drop and recreate the app database, then create the schema from SQLAlchemy models and load [`backend/app/seed.py`](./backend/app/seed.py). The database is wiped on every start/stop, so editing `seed.py` is all you need to change the catalog.
 3. **Run both apps** — FastAPI on **8000** with `uvicorn --reload`, Next on **3000** with `next dev`.
 
 - **App:** <http://127.0.0.1:3000>
@@ -34,7 +34,6 @@ This will:
 | `make setup` | Bootstrap only (venv, npm, .env, `initdb` if new). |
 | `make services-up` / `make services-down` | Start/stop only Postgres+Redis in `./.data/`. |
 | `make stop` | `services-down` + kill anything still listening on the app/db/cache ports. |
-| `make reset-db` | `DROP SCHEMA public` + re-migrate + re-seed (keeps the cluster in `.data/`. |
 | `make nuke-confirm` | `stop` + delete `./.data/` (fresh `initdb` on next `make dev`). |
 | `make psql` | `psql` into the project database. |
 | `make redis-cli` | `redis-cli` to the project Redis. |
@@ -53,9 +52,9 @@ Copy and edit [`.env.example`](./.env.example) to `.env` (done automatically on 
 
 ## Layout
 
-- [`backend/`](./backend) — FastAPI, SQLAlchemy (async) + Alembic, `app/seed.py` for the catalog.
+- [`backend/`](./backend) — FastAPI, SQLAlchemy (async). Schema is created from the models each run by [`app/init_db.py`](./backend/app/init_db.py); catalog data lives in [`app/seed.py`](./backend/app/seed.py).
 - [`frontend/`](./frontend) — Next.js, TanStack Query, cart/saved in `localStorage` under `cs.cart.v1` and `cs.saved.v1` ([`src/context/shop-state.tsx`](./frontend/src/context/shop-state.tsx)).
-- [`scripts/`](./scripts) — `bootstrap.sh`, `services-up.sh`, `services-down.sh`, `dev.sh`, `stop.sh`, `nuke.sh`, `reset-db.sh`.
+- [`scripts/`](./scripts) — `bootstrap.sh`, `services-up.sh`, `services-down.sh`, `dev.sh`, `stop.sh`, `nuke.sh`.
 
 ## License
 
