@@ -56,8 +56,8 @@ export default function ProductDetailPage() {
 
   const c = data;
   return (
-    <div className="grid gap-10 lg:grid-cols-2">
-      <div className="relative aspect-square overflow-hidden rounded-2xl border">
+    <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
+      <div className="relative aspect-square overflow-hidden rounded-2xl border border-border/70 bg-muted shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
         <Image
           src={c.image_url}
           alt={c.name}
@@ -67,9 +67,9 @@ export default function ProductDetailPage() {
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
       </div>
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="flex flex-col">
+        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-[2rem]">{c.name}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {c.origin ? `${c.origin} · ` : null}
           {c.cacao_percentage != null
             ? c.cacao_percentage === 0
@@ -77,15 +77,15 @@ export default function ProductDetailPage() {
               : `${c.cacao_percentage}% cacao`
             : "Cacao n/a"}
         </p>
-        <p className="mt-4 text-2xl font-semibold">{formatPrice(c.price_cents)}</p>
-        <div className="mt-3 flex flex-wrap gap-1">
+        <p className="mt-4 font-heading text-2xl font-semibold tabular-nums">{formatPrice(c.price_cents)}</p>
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {c.tags.map((t) => (
-            <Badge key={t} variant="secondary">
+            <Badge key={t} variant="outline">
               {t}
             </Badge>
           ))}
         </div>
-        <p className="mt-6 text-muted-foreground">{c.description}</p>
+        <p className="mt-6 max-w-prose leading-relaxed text-muted-foreground">{c.description}</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button
             size="lg"

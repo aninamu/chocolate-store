@@ -21,10 +21,16 @@ export function Header() {
   const count = cart.reduce((a, b) => a + b.quantity, 0);
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-card/85 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-card/70 dark:border-border dark:bg-card/80 dark:supports-[backdrop-filter]:bg-card/65">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="text-lg">chocolate store</span>
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
+        >
+          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest text-primary dark:bg-primary/20">
+            Est. 2024
+          </span>
+          <span className="text-lg font-semibold tracking-tight">Chocolate Store</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
@@ -67,7 +73,7 @@ export function Header() {
         </div>
       </div>
       {mobile ? (
-        <div className="border-t bg-card px-4 py-2 md:hidden">
+        <div className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20">
           <div className="mx-auto flex max-w-6xl flex-col">
             {links.map((l) => (
               <Link
@@ -89,15 +95,23 @@ export function Header() {
 
 export function HomeFooter() {
   return (
-    <footer className="mt-20 border-t py-8 text-sm text-muted-foreground">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="flex items-center gap-2">
-          <Package className="size-4" />
-          Free shipping on orders over $50 · Ships within 2 business days
+    <footer className="mt-20 border-t border-border/70 bg-muted/30 py-10 text-sm text-muted-foreground dark:bg-muted/15">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-center gap-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/60 dark:ring-border">
+            <Package className="size-4" />
+          </span>
+          <span className="max-w-md leading-relaxed">
+            Free shipping on orders over $50 · Ships within 2 business days
+          </span>
         </p>
-        <p className="flex items-center gap-2">
-          <Heart className="size-4" />
-          Handcrafted in small batches · © {new Date().getFullYear()} chocolate.store
+        <p className="flex items-center gap-2.5 sm:text-right">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/60 dark:ring-border sm:order-last">
+            <Heart className="size-4" />
+          </span>
+          <span className="max-w-md leading-relaxed">
+            Handcrafted in small batches · © {new Date().getFullYear()} Chocolate Store
+          </span>
         </p>
       </div>
     </footer>

@@ -50,12 +50,12 @@ export default function CheckoutPage() {
 
   if (cart.length === 0) {
     return (
-      <div>
-        <h1 className="text-2xl font-semibold">Checkout</h1>
-        <p className="mt-2 text-muted-foreground">Your cart is empty.</p>
+      <div className="rounded-2xl border border-border/70 bg-card/50 p-8 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05] sm:p-10">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Checkout</h1>
+        <p className="mt-3 text-sm text-muted-foreground">Your cart is empty.</p>
         <Link
           href="/shop"
-          className={buttonVariants({ variant: "secondary", className: "mt-4" })}
+          className={buttonVariants({ className: "mt-6" })}
         >
           Back to shop
         </Link>
@@ -65,15 +65,18 @@ export default function CheckoutPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Mock checkout</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Mock checkout</h1>
+      <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
         No real payment. We store an order in Postgres for the demo.
       </p>
-      <p className="mt-2 text-sm">
-        Subtotal: <span className="font-medium">{isLoading ? "…" : formatPrice(subtotal)}</span>
+      <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-sm dark:bg-muted/25">
+        <span className="text-muted-foreground">Subtotal</span>
+        <span className="font-heading font-semibold tabular-nums text-foreground">
+          {isLoading ? "…" : formatPrice(subtotal)}
+        </span>
       </p>
       <form
-        className="mt-6 max-w-md space-y-4"
+        className="mt-8 max-w-md space-y-5 rounded-xl border border-border/70 bg-card/60 p-6 shadow-sm ring-1 ring-black/[0.04] dark:bg-card/40 dark:ring-white/[0.06] sm:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           m.mutate({

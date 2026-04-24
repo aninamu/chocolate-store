@@ -32,11 +32,11 @@ export function CartDrawer({ open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full max-w-md flex-col gap-0 sm:max-w-md">
-        <SheetHeader>
+      <SheetContent className="flex w-full max-w-md flex-col gap-0 border-l border-border/70 bg-gradient-to-b from-popover via-popover to-muted/25 shadow-xl dark:to-muted/15 sm:max-w-md">
+        <SheetHeader className="border-b border-border/50 bg-muted/20 pb-4 dark:bg-muted/10">
           <SheetTitle>Your cart</SheetTitle>
         </SheetHeader>
-        <div className="flex-1 space-y-4 overflow-y-auto py-4">
+        <div className="flex-1 space-y-4 overflow-y-auto px-1 py-4">
           {isLoading && cart.length > 0 ? (
             <p className="text-sm text-muted-foreground">Loading products…</p>
           ) : null}
@@ -48,7 +48,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
               return (
                 <div
                   key={l.chocolateId}
-                  className="flex gap-3 border-b border-border/60 pb-3 last:border-0"
+                  className="flex gap-3 rounded-lg border-b border-border/50 pb-3 last:border-0"
                 >
                   {p ? (
                     <Image
@@ -56,7 +56,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                       width={64}
                       height={64}
                       alt=""
-                      className="h-16 w-16 rounded object-cover"
+                      className="h-16 w-16 rounded-lg object-cover shadow-sm ring-1 ring-border/50"
                     />
                   ) : (
                     <div className="h-16 w-16 rounded bg-muted" />
@@ -73,7 +73,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                         type="number"
                         min={0}
                         max={99}
-                        className="h-8 w-16 rounded border border-input bg-background px-2 text-sm"
+                        className="h-8 w-16 rounded-lg border border-input bg-card/50 px-2 text-sm shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/20"
                         value={l.quantity}
                         onChange={(e) =>
                           setQty(l.chocolateId, Number(e.target.value) || 0)
@@ -97,7 +97,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
           )}
         </div>
         {cart.length > 0 ? (
-          <div className="mt-auto space-y-3 border-t pt-4">
+          <div className="mt-auto space-y-3 border-t border-border/60 bg-muted/25 px-1 py-4 dark:bg-muted/10">
             <p className="text-sm text-muted-foreground">
               Subtotal <span className="float-right font-medium text-foreground">
                 {formatPrice(subtotal)}

@@ -24,7 +24,9 @@ export default function SavedPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold">Saved for later</h1>
+      <div className="mb-8">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Saved for later</h1>
+      </div>
       {isError ? (
         <p className="text-destructive">
           {(error as Error).message}{" "}

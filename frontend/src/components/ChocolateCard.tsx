@@ -21,21 +21,28 @@ export function ChocolateCard({ chocolate: c }: Props) {
   const saved = isSaved(c.id);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-md">
       <CardHeader className="p-0">
         <Link href={`/shop/${c.id}`} className="block">
-          <div className="relative aspect-[4/3] w-full">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
             <Image
               src={c.image_url}
               alt={c.name}
               fill
-              className="object-cover"
+              className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
               sizes="(max-width: 768px) 100vw, 25vw"
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-80 dark:from-black/40"
+              aria-hidden
             />
           </div>
         </Link>
         <div className="p-3 pb-0">
-          <Link href={`/shop/${c.id}`} className="line-clamp-1 font-medium hover:underline">
+          <Link
+            href={`/shop/${c.id}`}
+            className="line-clamp-1 font-heading font-medium text-foreground hover:underline"
+          >
             {c.name}
           </Link>
           <p className="text-sm text-muted-foreground">
@@ -51,12 +58,14 @@ export function ChocolateCard({ chocolate: c }: Props) {
       <CardContent className="p-3 pt-2">
         <div className="flex flex-wrap gap-1">
           {c.tags.slice(0, 3).map((t) => (
-            <Badge key={t} variant="secondary" className="text-xs">
+            <Badge key={t} variant="outline" className="text-xs font-normal">
               {t}
             </Badge>
           ))}
         </div>
-        <p className="mt-2 text-lg font-semibold">{formatPrice(c.price_cents)}</p>
+        <p className="mt-2 font-heading text-lg font-semibold tabular-nums text-foreground">
+          {formatPrice(c.price_cents)}
+        </p>
       </CardContent>
       <CardFooter className="flex gap-2 p-3">
         <Button

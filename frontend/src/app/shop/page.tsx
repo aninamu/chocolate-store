@@ -27,6 +27,72 @@ const sorts = [
   { value: "cacao_desc", label: "Cacao %" },
 ] as const;
 
+/** Buckets for the shop tag filter; unknown tags fall under "Other". */
+const TAG_GROUP_ORDER = [
+  "Chocolate type",
+  "Cacao",
+  "Flavors",
+  "Inclusions & diet",
+  "Texture & format",
+  "Other",
+] as const;
+
+type TagGroupLabel = (typeof TAG_GROUP_ORDER)[number];
+
+const TAG_GROUP_TYPE = new Set(
+  ["dark", "milk", "white", "ruby", "single-origin"] satisfies string[]
+);
+const TAG_GROUP_FLAVOR = new Set(
+  [
+    "caramel",
+    "salt",
+    "fruity",
+    "fruit",
+    "citrus",
+    "mint",
+    "spicy",
+    "nutty",
+  ] satisfies string[]
+);
+const TAG_GROUP_INCLUSION = new Set(
+  ["praline", "almond", "hazelnut", "nibs", "vegan"] satisfies string[]
+);
+const TAG_GROUP_FORMAT = new Set(
+  ["textured", "bites", "truffle", "spread", "classic", "gift"] satisfies string[]
+);
+
+function isCacaoPercentageTag(tag: string): boolean {
+  return /^\d{1,3}%$/.test(tag);
+}
+
+function tagGroupLabel(tag: string): TagGroupLabel {
+  const key = tag.toLowerCase();
+  if (TAG_GROUP_TYPE.has(key)) return "Chocolate type";
+  if (isCacaoPercentageTag(tag)) return "Cacao";
+  if (TAG_GROUP_FLAVOR.has(key)) return "Flavors";
+  if (TAG_GROUP_INCLUSION.has(key)) return "Inclusions & diet";
+  if (TAG_GROUP_FORMAT.has(key)) return "Texture & format";
+  return "Other";
+}
+
+function groupSortedTags(tags: string[]): { label: TagGroupLabel; tags: string[] }[] {
+  const buckets: Record<TagGroupLabel, string[]> = {
+    "Chocolate type": [],
+    Cacao: [],
+    Flavors: [],
+    "Inclusions & diet": [],
+    "Texture & format": [],
+    Other: [],
+  };
+  for (const t of tags) {
+    buckets[tagGroupLabel(t)].push(t);
+  }
+  return TAG_GROUP_ORDER.filter((label) => buckets[label].length > 0).map((label) => ({
+    label,
+    tags: buckets[label],
+  }));
+}
+
 function TagMultiselectDropdown({
   triggerId,
   tagOptions,
@@ -73,6 +139,7 @@ function TagMultiselectDropdown({
 
   const loading = isPending;
   const empty = !isPending && tagOptions.length === 0;
+  const tagGroups = useMemo(() => groupSortedTags(tagOptions), [tagOptions]);
 
   return (
     <div ref={rootRef} className="relative min-w-0">
@@ -103,28 +170,42 @@ function TagMultiselectDropdown({
         <div
           role="listbox"
           aria-multiselectable
-          className="absolute top-full z-50 mt-1 max-h-60 w-full min-w-[12rem] overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
+          className="absolute top-full z-50 mt-1 max-h-72 w-full min-w-[12rem] overflow-auto rounded-lg border border-border/80 bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
         >
-          <div className="flex flex-col gap-0.5 py-0.5">
-            {tagOptions.map((t) => {
-              const id = `tag-dd-${t.replace(/\s/g, "-")}`;
-              return (
-                <label
-                  key={t}
-                  htmlFor={id}
-                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                >
-                  <input
-                    id={id}
-                    type="checkbox"
-                    className="size-3.5 shrink-0 rounded border border-input accent-primary"
-                    checked={selectedTags.includes(t)}
-                    onChange={() => onToggle(t)}
-                  />
-                  <span className="truncate">{t}</span>
-                </label>
-              );
-            })}
+          <div className="flex flex-col py-0.5">
+            {tagGroups.map((group, gi) => (
+              <div
+                key={group.label}
+                role="group"
+                aria-label={group.label}
+                className={cn(gi > 0 && "mt-1 border-t border-border/60 pt-1")}
+              >
+                <div className="px-2 pb-1 pt-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {group.tags.map((t) => {
+                    const id = `tag-dd-${t.replace(/\s/g, "-")}`;
+                    return (
+                      <label
+                        key={t}
+                        htmlFor={id}
+                        className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                      >
+                        <input
+                          id={id}
+                          type="checkbox"
+                          className="size-3.5 shrink-0 rounded border border-input accent-primary"
+                          checked={selectedTags.includes(t)}
+                          onChange={() => onToggle(t)}
+                        />
+                        <span className="truncate">{t}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
           {selectedTags.length > 0 ? (
             <div className="border-t border-border p-1">
@@ -206,8 +287,13 @@ function ShopContent() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold">Shop</h1>
-      <div className="mb-6 flex flex-col gap-4 rounded-lg border bg-card/40 p-4 sm:flex-row sm:items-end sm:gap-4">
+      <div className="mb-8">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Shop</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Filter by flavor notes and origin, then sort to find your next favorite bar.
+        </p>
+      </div>
+      <div className="mb-6 flex flex-col gap-4 rounded-xl border border-border/70 bg-gradient-to-b from-card/90 to-muted/30 p-4 shadow-sm sm:flex-row sm:items-end sm:gap-4 dark:from-card/80 dark:to-muted/20">
         <div className="min-w-0 flex-1 space-y-2">
           <Label htmlFor={tagTriggerId}>Tags</Label>
           <TagMultiselectDropdown
@@ -223,7 +309,7 @@ function ShopContent() {
           <Label htmlFor="sort">Sort</Label>
           <select
             id="sort"
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="flex h-9 w-full rounded-lg border border-input bg-card/50 px-3 text-sm shadow-sm outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 dark:bg-input/20"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
