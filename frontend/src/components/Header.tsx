@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart, Menu, Package, ShoppingCart } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -25,14 +24,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <Image
-            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=64&q=80"
-            width={32}
-            height={32}
-            alt=""
-            className="rounded-sm"
-          />
-          <span className="text-lg">chocolate.store</span>
+          <span className="text-lg">chocolate store</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
@@ -98,13 +90,14 @@ export function Header() {
 export function HomeFooter() {
   return (
     <footer className="mt-20 border-t py-8 text-sm text-muted-foreground">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2">
-          <Package className="size-4" /> Local demo: FastAPI, Postgres, Redis, Next.js.
+          <Package className="size-4" />
+          Free shipping on orders over $50 · Ships within 2 business days
         </p>
-        <p className="mt-1 flex items-center gap-2">
+        <p className="flex items-center gap-2">
           <Heart className="size-4" />
-          Add items to the cart, save for later, or place a mock order—no sign-in.
+          Handcrafted in small batches · © {new Date().getFullYear()} chocolate.store
         </p>
       </div>
     </footer>

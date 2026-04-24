@@ -58,7 +58,7 @@ export function ChocolateCard({ chocolate: c }: Props) {
         </div>
         <p className="mt-2 text-lg font-semibold">{formatPrice(c.price_cents)}</p>
       </CardContent>
-      <CardFooter className="flex gap-2 p-3 pt-0">
+      <CardFooter className="flex gap-2 p-3">
         <Button
           className="flex-1"
           size="sm"

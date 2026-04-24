@@ -10,7 +10,7 @@ import { useShop } from "@/context/shop-state";
 import { Button } from "@/components/ui/button";
 
 export default function SavedPage() {
-  const { saved, isReady } = useShop();
+  const { saved } = useShop();
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["chocolates", "all"],
     queryFn: () => fetchChocolates(),
@@ -24,11 +24,7 @@ export default function SavedPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-semibold">Saved for later</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        Stored in your browser ({saved.length} id{saved.length === 1 ? "" : "s"}).{" "}
-        {!isReady ? "Syncing local storage…" : null}
-      </p>
+      <h1 className="mb-6 text-2xl font-semibold">Saved for later</h1>
       {isError ? (
         <p className="text-destructive">
           {(error as Error).message}{" "}

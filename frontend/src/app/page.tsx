@@ -19,13 +19,13 @@ export default function HomePage() {
   return (
     <div>
       <section className="mb-12 rounded-2xl border bg-card/60 p-8">
-        <p className="text-sm font-medium text-primary">Cursor field demo</p>
+        <p className="text-sm font-medium text-primary">New spring collection</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          A real marketplace flow—browsing, a cart, saved items, and a mock checkout
+          Single-origin chocolate, delivered to your door
         </h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
-          Next.js, FastAPI, Postgres, and Redis, all in dev with hot reload. No accounts,
-          so cart and wishlist live in your browser. Change code and see it update live.
+          Small-batch bars and truffles from growers in Peru, Madagascar, and Ecuador.
+          Ethically sourced, freshly made, and shipped within 48 hours of leaving the kitchen.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
@@ -34,14 +34,6 @@ export default function HomePage() {
           >
             Open shop <ArrowRight className="ml-1 size-4" />
           </Link>
-          <a
-            className={buttonVariants({ size: "lg", variant: "secondary" })}
-            href="http://127.0.0.1:8000/api/health"
-            target="_blank"
-            rel="noreferrer"
-          >
-            API health
-          </a>
         </div>
       </section>
       <div className="mb-4 flex items-end justify-between">

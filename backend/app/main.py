@@ -25,7 +25,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="chocolate.store API",
+    title="chocolate store API",
     version="0.1.0",
     lifespan=lifespan,
 )

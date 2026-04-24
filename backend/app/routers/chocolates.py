@@ -5,7 +5,8 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import Select, asc, desc, func, select
+from sqlalchemy import Select, String, asc, desc, literal, select
+from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -19,8 +20,10 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _list_cache_key(tag: str | None, sort: str | None) -> str:
-    return f"chocolates:list:{tag or ''}:{sort or 'name'}"
+def _list_cache_key(tag: list[str] | None, sort: str | None) -> str:
+    t = tag or []
+    tkey = ",".join(sorted(x.strip() for x in t if x and x.strip()))
+    return f"chocolates:list:{tkey}:{sort or 'name'}"
 
 
 def _detail_cache_key(cid: UUID) -> str:
@@ -29,7 +32,10 @@ def _detail_cache_key(cid: UUID) -> str:
 
 @router.get("", response_model=list[ChocolateOut])
 async def list_chocolates(
-    tag: str | None = Query(None, description="Filter by tag (case-insensitive partial)"),
+    tag: list[str] = Query(
+        default_factory=list,
+        description="Filter: chocolate must include at least one listed tag (repeat query param, exact match; OR semantics).",
+    ),
     sort: str | None = Query(
         "name",
         description="Sort: name, price_asc, price_desc, cacao_desc",
@@ -45,11 +51,12 @@ async def list_chocolates(
         except (json.JSONDecodeError, ValueError) as e:
             log.debug("cache miss parse %s: %s", key, e)
 
+    cleaned = [t.strip() for t in (tag or []) if t and t.strip()]
     stmt: Select[tuple[Chocolate]] = select(Chocolate)
-    if tag:
-        stmt = stmt.where(
-            func.array_to_string(Chocolate.tags, ",").ilike(f"%{tag.strip()}%")
-        )
+    if cleaned:
+        literals = [literal(s, type_=String(64)) for s in cleaned]
+        any_of = array(literals)
+        stmt = stmt.where(Chocolate.tags.op("&&")(any_of))
     s = sort or "name"
     if s == "price_asc":
         stmt = stmt.order_by(asc(Chocolate.price_cents), asc(Chocolate.name))
