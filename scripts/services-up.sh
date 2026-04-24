@@ -40,8 +40,10 @@ fi
 if ! pg_ctl -D .data/postgres status >/dev/null 2>&1; then
   # Keep Unix sockets inside the project data dir so unprivileged Linux setups
   # do not need write access to /var/run/postgresql.
+  # Use -k . (relative to the data directory) so pg_ctl's whitespace split of -o
+  # does not break if $ROOT contains spaces.
   pg_ctl -D .data/postgres -l logs/postgres.log \
-    -o "-p $PG_PORT -h 127.0.0.1 -k $ROOT/.data/postgres" start
+    -o "-p $PG_PORT -h 127.0.0.1 -k ." start
 fi
 until pg_isready -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -q 2>/dev/null; do
   sleep 0.2
