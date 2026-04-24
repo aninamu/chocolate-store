@@ -72,14 +72,11 @@ async def list_chocolates(
     result = await session.execute(stmt)
     rows = result.scalars().all()
     out = [ChocolateOut.model_validate(r) for r in rows]
-    try:
-        await cache_set(
-            key,
-            json.dumps([m.model_dump(mode="json") for m in out]),
-            settings.cache_ttl_seconds,
-        )
-    except OSError as e:
-        log.warning("list cache set: %s", e)
+    await cache_set(
+        key,
+        json.dumps([m.model_dump(mode="json") for m in out]),
+        settings.cache_ttl_seconds,
+    )
     return out
 
 
@@ -101,10 +98,7 @@ async def get_chocolate(
     if row is None:
         raise HTTPException(status_code=404, detail="Chocolate not found")
     out = ChocolateOut.model_validate(row)
-    try:
-        await cache_set(
-            key, json.dumps(out.model_dump(mode="json")), settings.cache_ttl_seconds
-        )
-    except OSError as e:
-        log.warning("detail cache set: %s", e)
+    await cache_set(
+        key, json.dumps(out.model_dump(mode="json")), settings.cache_ttl_seconds
+    )
     return out
