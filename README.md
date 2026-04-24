@@ -2,12 +2,15 @@
 
 A field-engineer friendly demo: browse a chocolate marketplace, save items, use a local cart, and run a **mock** checkout. No user accounts. **Next.js 15 (App Router + Tailwind + shadcn/ui)**, **FastAPI**, **Postgres** (user-level `pg_ctl`, project-local data dir), **Redis** (user-level `redis-server`, local port), all in **dev mode with hot reload**.
 
-## Prerequisites (macOS)
+## Prerequisites
 
-- **Homebrew** (or install Postgres 16 and Redis 7 yourself and put `initdb`, `pg_ctl`, `psql`, `redis-server`, and `redis-cli` on your `PATH`).
-- **Python 3.9+** (3.12+ from Homebrew recommended for newer typing support).
+- **Python 3.9+** (3.12+ recommended for newer typing support).
 - **Node.js 20+** and `npm`.
-- `brew install postgresql@16 redis` if you are missing the binaries (the tools stay **off** `brew services`—this project starts its own processes).
+- **Postgres 16** and **Redis 7** binaries on your `PATH` (`initdb`, `pg_ctl`, `psql`, `redis-server`, and `redis-cli`).
+- **macOS (Homebrew):** `brew install postgresql@16 redis`
+- **Ubuntu/Debian:** `sudo apt-get install postgresql redis-server python3.12-venv`
+
+On Ubuntu/Debian, the scripts automatically add `/usr/lib/postgresql/16/bin` to `PATH` when needed.
 
 ## One command
 
