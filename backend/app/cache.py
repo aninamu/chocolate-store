@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from app.config import settings
 
@@ -33,7 +34,7 @@ async def cache_get(key: str) -> str | None:
     r = get_redis()
     try:
         return await r.get(key)
-    except OSError as e:
+    except RedisError as e:
         log.warning("redis get %s: %s", key, e)
         return None
 
@@ -42,5 +43,5 @@ async def cache_set(key: str, value: str, ttl: int) -> None:
     r = get_redis()
     try:
         await r.setex(key, ttl, value)
-    except OSError as e:
+    except RedisError as e:
         log.warning("redis set %s: %s", key, e)

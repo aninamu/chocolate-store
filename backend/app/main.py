@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from redis.exceptions import RedisError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,6 +65,6 @@ async def health() -> dict[str, str | bool]:
         r = get_redis()
         if await r.ping():
             redis_ok = True
-    except OSError as e:
+    except RedisError as e:
         log.warning("health redis: %s", e)
     return {"ok": db_ok and redis_ok, "database": db_ok, "redis": redis_ok}
