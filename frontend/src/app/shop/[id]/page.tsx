@@ -1,23 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import { fetchChocolate } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
+import { AddToCartControl } from "@/components/AddToCartControl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShop } from "@/context/shop-state";
-import { toast } from "sonner";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
   const router = useRouter();
-  const { addToCart, toggleSaved, isSaved, isReady } = useShop();
+  const { toggleSaved, isSaved, isReady } = useShop();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["chocolate", id],
@@ -87,17 +87,13 @@ export default function ProductDetailPage() {
         </div>
         <p className="mt-6 max-w-prose leading-relaxed text-muted-foreground">{c.description}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button
+          <AddToCartControl
+            chocolateId={c.id}
+            productName={c.name}
+            inStock={c.in_stock}
+            isReady={isReady}
             size="lg"
-            disabled={!c.in_stock || !isReady}
-            onClick={() => {
-              addToCart(c.id, 1);
-              toast("Added to cart", { description: c.name });
-            }}
-          >
-            <ShoppingCart className="size-4" />
-            <span className="ml-2">Add to cart</span>
-          </Button>
+          />
           <Button
             type="button"
             size="lg"

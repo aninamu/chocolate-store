@@ -1,23 +1,23 @@
 "use client";
 
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import type { Chocolate } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
+import { AddToCartControl } from "@/components/AddToCartControl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { useShop } from "@/context/shop-state";
-import { toast } from "sonner";
 
 type Props = {
   chocolate: Chocolate;
 };
 
 export function ChocolateCard({ chocolate: c }: Props) {
-  const { addToCart, toggleSaved, isSaved, isReady } = useShop();
+  const { toggleSaved, isSaved, isReady } = useShop();
   const saved = isSaved(c.id);
 
   return (
@@ -68,18 +68,13 @@ export function ChocolateCard({ chocolate: c }: Props) {
         </p>
       </CardContent>
       <CardFooter className="flex gap-2 p-3">
-        <Button
-          className="flex-1"
+        <AddToCartControl
+          chocolateId={c.id}
+          productName={c.name}
+          inStock={c.in_stock}
+          isReady={isReady}
           size="sm"
-          disabled={!c.in_stock || !isReady}
-          onClick={() => {
-            addToCart(c.id, 1);
-            toast("Added to cart", { description: c.name });
-          }}
-        >
-          <ShoppingCart className="size-4" />
-          <span className="ml-1.5">Add</span>
-        </Button>
+        />
         <Button
           type="button"
           size="icon"

@@ -42,8 +42,17 @@ function readLocal<T>(key: string, fallback: T): T {
 function writeLocal<T>(key: string, v: T) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, JSON.stringify(v));
-  window.dispatchEvent(new Event("chocolate-store-storage"));
+  // Defer so same-tab listeners (chocolate-store-storage) do not run synchronously
+  // during a setState functional updater. React 19 dev may invoke the updater twice;
+  // sync rehydration would let the second pass see the first pass's cart and add twice.
+  queueMicrotask(() => {
+    window.dispatchEvent(new Event("chocolate-store-storage"));
+  });
 }
+
+// #region agent log
+let _dbgAddToCartCallSeq = 0;
+// #endregion
 
 export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -65,7 +74,23 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         setSaved(readLocal<string[]>(SAVED_KEY, []));
     };
     const onCustom = () => {
-      setCart(readLocal<CartLine[]>(CART_KEY, []));
+      // #region agent log
+      const _cart = readLocal<CartLine[]>(CART_KEY, []);
+      fetch("http://127.0.0.1:7350/ingest/37f73b68-7782-4cd7-81bf-7ce4f361283b", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b3e55b" },
+        body: JSON.stringify({
+          sessionId: "b3e55b",
+          runId: "post-fix",
+          hypothesisId: "H1",
+          location: "shop-state.tsx:onCustom",
+          message: "onCustom rehydrate from localStorage",
+          data: { lineCount: _cart.length, lines: _cart.map((l) => ({ id: l.chocolateId, q: l.quantity })) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      setCart(_cart);
       setSaved(readLocal<string[]>(SAVED_KEY, []));
     };
     window.addEventListener("storage", onStorage);
@@ -88,9 +113,48 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = useCallback(
     (chocolateId: string, quantity = 1) => {
+      // #region agent log
+      _dbgAddToCartCallSeq += 1;
+      const _seq = _dbgAddToCartCallSeq;
+      fetch("http://127.0.0.1:7350/ingest/37f73b68-7782-4cd7-81bf-7ce4f361283b", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b3e55b" },
+        body: JSON.stringify({
+          sessionId: "b3e55b",
+          runId: "post-fix",
+          hypothesisId: "H2",
+          location: "shop-state.tsx:addToCart:entry",
+          message: "addToCart called",
+          data: { chocolateId, quantity, callSeq: _seq },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       setCart((prev) => {
         const cur = prev.find((l) => l.chocolateId === chocolateId);
         const q = (cur?.quantity ?? 0) + quantity;
+        // #region agent log
+        fetch("http://127.0.0.1:7350/ingest/37f73b68-7782-4cd7-81bf-7ce4f361283b", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b3e55b" },
+          body: JSON.stringify({
+            sessionId: "b3e55b",
+            runId: "post-fix",
+            hypothesisId: "H1",
+            location: "shop-state.tsx:addToCart:updater",
+            message: "addToCart setCart functional updater",
+            data: {
+              callSeq: _seq,
+              chocolateId,
+              quantity,
+              prevQty: cur?.quantity,
+              newQ: q,
+              prevLineCount: prev.length,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         const next: CartLine[] = [
           ...prev.filter((l) => l.chocolateId !== chocolateId),
           { chocolateId, quantity: q },

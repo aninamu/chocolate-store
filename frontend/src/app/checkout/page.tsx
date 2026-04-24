@@ -65,10 +65,7 @@ export default function CheckoutPage() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Mock checkout</h1>
-      <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        No real payment. We store an order in Postgres for the demo.
-      </p>
+      <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Checkout</h1>
       <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-sm dark:bg-muted/25">
         <span className="text-muted-foreground">Subtotal</span>
         <span className="font-heading font-semibold tabular-nums text-foreground">
@@ -111,7 +108,7 @@ export default function CheckoutPage() {
           />
         </div>
         <Button type="submit" disabled={m.isPending}>
-          {m.isPending ? "Placing order…" : "Place order (mock payment)"}
+          {m.isPending ? "Placing order…" : "Place order"}
         </Button>
       </form>
     </div>

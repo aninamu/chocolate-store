@@ -53,9 +53,6 @@ export function Header() {
           >
             <Menu className="size-4" />
           </Button>
-          <Link className={buttonVariants()} href="/shop">
-            Browse
-          </Link>
           <Button
             type="button"
             variant="secondary"
