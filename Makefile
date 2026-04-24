@@ -35,7 +35,7 @@ nuke:
 
 psql:
 	@set -a && [ -f .env ] && . ./.env && set +a && \
-		if [ -d "$$(brew --prefix postgresql@16 2>/dev/null)/bin" ]; then export PATH="$$(brew --prefix postgresql@16)/bin:$$PATH"; fi; \
+		. ./scripts/postgres-path.sh && add_postgres_bin_to_path; \
 		psql -h 127.0.0.1 -p "$$PG_PORT" -U "$$PG_USER" -d "$$PG_DB"
 
 redis-cli:
