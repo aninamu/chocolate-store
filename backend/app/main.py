@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache import get_redis, close_redis
@@ -57,7 +58,7 @@ async def health() -> dict[str, str | bool]:
             s: AsyncSession
             await s.execute(text("SELECT 1"))
             db_ok = True
-    except OSError as e:
+    except SQLAlchemyError as e:
         log.warning("health db: %s", e)
     try:
         r = get_redis()
