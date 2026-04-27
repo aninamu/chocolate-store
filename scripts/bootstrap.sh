@@ -8,18 +8,21 @@ cd "$ROOT"
 export PGPORT="${PG_PORT:-55432}"
 export PGUSER="${PG_USER:-chocolate}"
 
+# shellcheck source=/dev/null
+source "$ROOT/scripts/postgres-path.sh"
+
 need_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "error: '$1' not found in PATH." >&2
-    echo "  Install Postgres 16:  brew install postgresql@16" >&2
-    echo "  Install Redis:        brew install redis" >&2
+    echo "  Install Postgres 16:  brew install postgresql@16  # macOS" >&2
+    echo "  Install Postgres 16:  sudo apt-get install postgresql  # Ubuntu" >&2
+    echo "  Install Redis:        brew install redis  # macOS" >&2
+    echo "  Install Redis:        sudo apt-get install redis-server  # Ubuntu" >&2
     exit 1
   fi
 }
 
-if [ -d "$(brew --prefix postgresql@16 2>/dev/null)/bin" ]; then
-  export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
-fi
+add_postgres_bin_to_path
 
 # Python
 python_ver="$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo 0)"

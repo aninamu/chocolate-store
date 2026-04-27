@@ -6,9 +6,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-if [ -d "$(brew --prefix postgresql@16 2>/dev/null)/bin" ]; then
-  export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
-fi
+# shellcheck source=/dev/null
+source "$ROOT/scripts/postgres-path.sh"
+
+add_postgres_bin_to_path
 
 if [ -f .env ]; then
   set -a
@@ -36,9 +37,14 @@ if [ ! -s .data/postgres/PG_VERSION ]; then
   initdb -D .data/postgres -U "$PG_USER" --auth=trust --encoding=UTF8
 fi
 
+PG_SOCKET_DIR="$ROOT/.data/postgres"
 if ! pg_ctl -D .data/postgres status >/dev/null 2>&1; then
+  # Keep Unix sockets inside the project data dir so unprivileged Linux setups
+  # do not need write access to /var/run/postgresql.
+  # Use -k . (relative to the data directory) so pg_ctl's whitespace split of -o
+  # does not break if $ROOT contains spaces.
   pg_ctl -D .data/postgres -l logs/postgres.log \
-    -o "-p $PG_PORT -h 127.0.0.1" start
+    -o "-p $PG_PORT -h 127.0.0.1 -k \"$PG_SOCKET_DIR\"" start
 fi
 until pg_isready -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -q 2>/dev/null; do
   sleep 0.2

@@ -5,9 +5,10 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 0
 
-if [ -d "$(brew --prefix postgresql@16 2>/dev/null)/bin" ]; then
-  export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
-fi
+# shellcheck source=/dev/null
+source "$ROOT/scripts/postgres-path.sh"
+
+add_postgres_bin_to_path
 
 if [ -f .env ]; then
   set -a
