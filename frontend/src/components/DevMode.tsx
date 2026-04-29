@@ -64,11 +64,11 @@ function DevModeHoverOutline({
 }
 
 function DevModeToggle() {
-  const { enabled, setEnabled } = useDevMode();
+  const { enabled, setEnabled, agentStatus } = useDevMode();
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-1 max-md:hidden"
+      className="fixed bottom-4 right-4 z-[60] flex flex-col items-center gap-1.5 rounded-2xl border border-border/40 bg-card/40 px-4 py-3 shadow-lg backdrop-blur-md supports-backdrop-filter:bg-card/30 max-md:hidden"
       data-dev-mode-ui=""
     >
       <label
@@ -77,6 +77,17 @@ function DevModeToggle() {
       >
         Dev mode {enabled ? "on" : "off"}
       </label>
+      {enabled ? (
+        <span
+          className="text-[0.65rem] text-muted-foreground/80"
+          data-testid="dev-mode-agent-status"
+        >
+          {(agentStatus === "connecting" || agentStatus === "idle") &&
+            "Agent: connecting…"}
+          {agentStatus === "connected" && "Agent: connected"}
+          {agentStatus === "error" && "Agent: error"}
+        </span>
+      ) : null}
       <button
         id="dev-mode-switch"
         type="button"

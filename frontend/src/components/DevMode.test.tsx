@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -41,13 +47,33 @@ function TestRoot({ children }: { children: ReactNode }) {
   );
 }
 
+const fetchMock = vi.fn();
+
 describe("DevMode", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+    fetchMock.mockReset();
   });
 
   beforeEach(() => {
     setDesktopViewport();
+    fetchMock.mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.includes("/api/dev-mode/agent")) {
+          if (init?.method === "DELETE") {
+            return new Response(null, { status: 204 });
+          }
+          return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("not found", { status: 404 });
+      }
+    );
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   it("toggle starts in off state and enables dev mode on click", async () => {
@@ -66,6 +92,13 @@ describe("DevMode", () => {
     expect(
       screen.getByRole("switch", { name: "Dev mode on" })
     ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/dev-mode/agent",
+        expect.objectContaining({ method: "POST" })
+      );
+    });
   });
 
   it("with dev mode on, click selects an element and opens the sidebar with metadata", async () => {
@@ -97,5 +130,15 @@ describe("DevMode", () => {
     expect(screen.queryByText("Element")).not.toBeInTheDocument();
     const toggles = screen.getAllByRole("switch", { name: "Dev mode off" });
     expect(toggles[0]).toHaveAttribute("aria-checked", "false");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/dev-mode/agent",
+        expect.objectContaining({
+          method: "DELETE",
+          body: JSON.stringify({ agentId: "bc-test-agent" }),
+        })
+      );
+    });
   });
 });

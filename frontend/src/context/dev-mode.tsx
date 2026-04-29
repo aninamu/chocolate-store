@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -219,12 +221,16 @@ export function buildElementSnapshot(target: EventTarget | null): DevModeElement
   };
 }
 
+export type DevModeAgentStatus = "idle" | "connecting" | "connected" | "error";
+
 type DevModeContextValue = {
   enabled: boolean;
   setEnabled: (next: boolean) => void;
   selected: DevModeElementSnapshot | null;
   setSelected: (snap: DevModeElementSnapshot | null) => void;
   isInsideDevModeUi: typeof isInsideDevModeUi;
+  agentId: string | null;
+  agentStatus: DevModeAgentStatus;
 };
 
 const DevModeContext = createContext<DevModeContextValue | null>(null);
@@ -232,6 +238,72 @@ const DevModeContext = createContext<DevModeContextValue | null>(null);
 export function DevModeProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabledState] = useState(false);
   const [selected, setSelected] = useState<DevModeElementSnapshot | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
+  const [agentStatus, setAgentStatus] =
+    useState<DevModeAgentStatus>("idle");
+  const agentIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    agentIdRef.current = agentId;
+  }, [agentId]);
+
+  useEffect(() => {
+    if (!enabled) {
+      const id = agentIdRef.current;
+      setAgentId(null);
+      setAgentStatus("idle");
+      if (id) {
+        void fetch("/api/dev-mode/agent", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentId: id }),
+        }).catch(() => {
+          /* ignore teardown network errors */
+        });
+      }
+      return;
+    }
+
+    const ac = new AbortController();
+    setAgentStatus("connecting");
+    setAgentId(null);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/dev-mode/agent", {
+          method: "POST",
+          signal: ac.signal,
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          agentId?: string;
+          error?: string;
+        };
+        if (ac.signal.aborted) {
+          return;
+        }
+        if (!res.ok) {
+          setAgentStatus("error");
+          setAgentId(null);
+          return;
+        }
+        if (typeof data.agentId === "string") {
+          setAgentId(data.agentId);
+          setAgentStatus("connected");
+        } else {
+          setAgentStatus("error");
+        }
+      } catch {
+        if (!ac.signal.aborted) {
+          setAgentStatus("error");
+          setAgentId(null);
+        }
+      }
+    })();
+
+    return () => {
+      ac.abort();
+    };
+  }, [enabled]);
 
   const setEnabled = useCallback((next: boolean) => {
     setEnabledState(next);
@@ -248,8 +320,10 @@ export function DevModeProvider({ children }: { children: ReactNode }) {
         selected,
         setSelected,
         isInsideDevModeUi,
+        agentId,
+        agentStatus,
       }) satisfies DevModeContextValue,
-    [enabled, setEnabled, selected]
+    [agentId, agentStatus, enabled, selected, setEnabled]
   );
 
   return (

@@ -63,6 +63,8 @@ This will:
 
 Copy and edit [`.env.example`](./.env.example) to `.env` (done automatically on first `make dev`). The API reads `DATABASE_URL` and `REDIS_URL`; the browser uses `NEXT_PUBLIC_API_URL` (also exported in `scripts/dev.sh` for `next dev`).
 
+Optional **in-app Dev mode** (toggle in the UI) can open a **Cursor Cloud agent** via the Next.js route [`frontend/src/app/api/dev-mode/agent/route.ts`](./frontend/src/app/api/dev-mode/agent/route.ts). Set **`CURSOR_API_KEY`** (server-only; get a key from [Cursor Dashboard → Integrations](https://cursor.com/dashboard/integrations)). Optionally set **`CURSOR_DEV_MODE_REPO_URL`** to an HTTPS GitHub repo URL connected to your team; otherwise the handler tries `git remote get-url origin` from the repo root.
+
 ## Suggested “Cursor as a field engineer” demo
 
 1. Run `make dev`, open the shop, add an item, open the cart sheet, and place a **mock** order. Show **Network** for `POST /api/checkout` and the success page. Optional: `make psql` and `select * from orders;`.
