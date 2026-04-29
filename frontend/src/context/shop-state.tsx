@@ -42,9 +42,7 @@ function readLocal<T>(key: string, fallback: T): T {
 function writeLocal<T>(key: string, v: T) {
   if (typeof window === "undefined") return;
   localStorage.setItem(key, JSON.stringify(v));
-  // Defer so same-tab listeners (chocolate-store-storage) do not run synchronously
-  // during a setState functional updater. React 19 dev may invoke the updater twice;
-  // sync rehydration would let the second pass see the first pass's cart and add twice.
+  // Defer custom event: avoids same-tab storage sync running inside a setState updater (React 19 strict double-invoke).
   queueMicrotask(() => {
     window.dispatchEvent(new Event("chocolate-store-storage"));
   });

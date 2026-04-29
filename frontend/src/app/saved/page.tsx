@@ -17,9 +17,9 @@ export default function SavedPage() {
   });
 
   const list = useMemo(() => {
-    if (!data) return [];
-    const set = new Set(saved);
-    return data.filter((c) => set.has(c.id));
+    if (!data?.length) return [];
+    const ids = new Set(saved);
+    return data.filter((c) => ids.has(c.id));
   }, [data, saved]);
 
   return (

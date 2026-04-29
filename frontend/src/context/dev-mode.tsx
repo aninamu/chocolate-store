@@ -98,9 +98,6 @@ function getElementClassName(el: Element): string {
   return el.getAttribute("class") ?? "";
 }
 
-/**
- * One segment in the path: tag, optional #id, optional .class list, position among same-tag siblings.
- */
 function buildPathSegment(node: Element): string {
   const tag = node.tagName.toLowerCase();
   const id = (node as HTMLElement).id
@@ -131,9 +128,6 @@ function buildPathSegment(node: Element): string {
   return `${tag}${id}${classPart}${nth}`;
 }
 
-/**
- * Build a path from the target up toward body / html, then reverse to root -> leaf.
- */
 function buildDomPath(target: Element, maxDepth: number): string[] {
   const fromLeaf: string[] = [];
   let current: Element | null = target;

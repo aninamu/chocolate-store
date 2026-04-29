@@ -224,10 +224,6 @@ function MetadataSection({
   );
 }
 
-function formatDomPath(path: string[]): string {
-  return path.join(" > ");
-}
-
 function DevModeSidebar() {
   const { selected, setSelected } = useDevMode();
   const open = selected != null;
@@ -267,7 +263,7 @@ function DevModeSheetInner({ snapshot }: { snapshot: DevModeElementSnapshot }) {
       <SheetHeader className="border-border/80 sticky top-0 z-[1] border-b bg-card/95 p-4 backdrop-blur supports-backdrop-filter:bg-card/80">
         <SheetTitle>Element</SheetTitle>
         <SheetDescription className="font-mono text-xs break-all text-muted-foreground">
-          {formatDomPath(snapshot.domPath)}
+          {snapshot.domPath.join(" > ")}
         </SheetDescription>
       </SheetHeader>
 

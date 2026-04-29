@@ -27,7 +27,6 @@ const sorts = [
   { value: "cacao_desc", label: "Cacao %" },
 ] as const;
 
-/** Buckets for the shop tag filter; unknown tags fall under "Other". */
 const TAG_GROUP_ORDER = [
   "Chocolate type",
   "Cacao",
@@ -137,7 +136,6 @@ function TagMultiselectDropdown({
     return `${a}, ${b} +${selectedTags.length - 2}`;
   }, [selectedTags]);
 
-  const loading = isPending;
   const empty = !isPending && tagOptions.length === 0;
   const tagGroups = useMemo(() => groupSortedTags(tagOptions), [tagOptions]);
 
@@ -148,16 +146,16 @@ function TagMultiselectDropdown({
         type="button"
         variant="outline"
         size="lg"
-        disabled={loading || empty}
+        disabled={isPending || empty}
         className="h-9 w-full justify-between gap-2 px-3 font-normal hover:bg-background"
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => {
-          if (!loading && !empty) setOpen((v) => !v);
+          if (!isPending && !empty) setOpen((v) => !v);
         }}
       >
         <span className="min-w-0 truncate text-left">
-          {loading ? "Loading tags…" : empty ? "No tags" : summary}
+          {isPending ? "Loading tags…" : empty ? "No tags" : summary}
         </span>
         <ChevronDown
           className={cn(
@@ -166,7 +164,7 @@ function TagMultiselectDropdown({
           )}
         />
       </Button>
-      {open && !loading && !empty ? (
+      {open && !isPending && !empty ? (
         <div
           role="listbox"
           aria-multiselectable

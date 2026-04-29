@@ -2,8 +2,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import { Agent } from "@cursor/sdk";
-import type { SDKAgent } from "@cursor/sdk";
+import { Agent, type SDKAgent } from "@cursor/sdk";
 
 const agents = new Map<string, SDKAgent>();
 
