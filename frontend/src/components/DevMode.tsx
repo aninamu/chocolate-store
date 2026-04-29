@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -65,56 +65,42 @@ function DevModeHoverOutline({
 
 function DevModeToggle() {
   const { enabled, setEnabled } = useDevMode();
-  const toggleRootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = toggleRootRef.current;
-    const innerWidth =
-      typeof window !== "undefined" ? window.innerWidth : null;
-    const mdUp =
-      typeof window !== "undefined"
-        ? window.matchMedia("(min-width: 768px)").matches
-        : null;
-    const display = el ? getComputedStyle(el).display : null;
-    // #region agent log
-    fetch("http://127.0.0.1:7843/ingest/a92391eb-c9da-446b-ba3a-cb0a95303651", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "cc8ea8",
-      },
-      body: JSON.stringify({
-        sessionId: "cc8ea8",
-        runId: "post-fix",
-        hypothesisId: "A-B",
-        location: "DevMode.tsx:DevModeToggle",
-        message: "toggle wrapper computed display vs viewport",
-        data: { innerWidth, mdUp, display },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, []);
 
   return (
     <div
-      ref={toggleRootRef}
-      className="fixed bottom-4 right-4 z-[60] max-md:hidden"
+      className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-1 max-md:hidden"
       data-dev-mode-ui=""
     >
-      <Button
-        data-testid="dev-mode-toggle"
-        type="button"
-        size="sm"
-        variant={enabled ? "default" : "secondary"}
-        className="pointer-events-auto shadow-md"
-        aria-pressed={enabled}
-        onClick={() => {
-          setEnabled(!enabled);
-        }}
+      <label
+        htmlFor="dev-mode-switch"
+        className="cursor-pointer select-none text-xs text-muted-foreground/70"
       >
-        {enabled ? "Dev mode on" : "Dev mode"}
-      </Button>
+        Dev mode {enabled ? "on" : "off"}
+      </label>
+      <button
+        id="dev-mode-switch"
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        data-testid="dev-mode-toggle"
+        className={cn(
+          "relative h-7 w-12 shrink-0 cursor-pointer rounded-full border border-transparent shadow-md transition-colors duration-200 outline-none select-none",
+          "focus-visible:ring-[3px] focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "active:scale-[0.98]",
+          enabled
+            ? "bg-primary shadow-primary/20"
+            : "bg-muted text-muted-foreground shadow-inner"
+        )}
+        onClick={() => setEnabled(!enabled)}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute top-0.5 left-0.5 size-6 rounded-full bg-card shadow-sm ring-1 ring-border/60 transition-transform duration-200 ease-out",
+            enabled && "translate-x-5"
+          )}
+        />
+      </button>
     </div>
   );
 }
@@ -340,27 +326,6 @@ function DevModeSheetInner({ snapshot }: { snapshot: DevModeElementSnapshot }) {
 }
 
 export function DevMode() {
-  useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7843/ingest/a92391eb-c9da-446b-ba3a-cb0a95303651", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "cc8ea8",
-      },
-      body: JSON.stringify({
-        sessionId: "cc8ea8",
-        runId: "pre-fix",
-        hypothesisId: "C",
-        location: "DevMode.tsx:DevMode",
-        message: "DevMode subtree mounted",
-        data: {},
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, []);
-
   return (
     <>
       <DevModeToggle />

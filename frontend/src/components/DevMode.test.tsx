@@ -58,13 +58,14 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    const toggle = screen.getByTestId("dev-mode-toggle");
-    expect(toggle).toHaveTextContent("Dev mode");
-    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    const toggle = screen.getByRole("switch", { name: "Dev mode off" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
 
     await user.click(toggle);
-    expect(toggle).toHaveTextContent("Dev mode on");
-    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(
+      screen.getByRole("switch", { name: "Dev mode on" })
+    ).toBeInTheDocument();
   });
 
   it("with dev mode on, click selects an element and opens the sidebar with metadata", async () => {
@@ -77,7 +78,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByTestId("dev-mode-toggle"));
+    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
 
     const p = within(screen.getByTestId("host")).getByText("target text");
     await user.click(p);
@@ -92,9 +93,9 @@ describe("DevMode", () => {
     ).toBeInTheDocument();
     expect(within(panel).getByText("data-foo")).toBeInTheDocument();
 
-    await user.click(screen.getByTestId("dev-mode-toggle"));
+    await user.click(screen.getByRole("switch", { name: "Dev mode on" }));
     expect(screen.queryByText("Element")).not.toBeInTheDocument();
-    const toggles = screen.getAllByTestId("dev-mode-toggle");
-    expect(toggles[0]).toHaveTextContent("Dev mode");
+    const toggles = screen.getAllByRole("switch", { name: "Dev mode off" });
+    expect(toggles[0]).toHaveAttribute("aria-checked", "false");
   });
 });
