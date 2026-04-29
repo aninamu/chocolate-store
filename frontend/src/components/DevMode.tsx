@@ -9,10 +9,12 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type MutableRefObject,
 } from "react";
 
-import { ChevronRight, Loader2, XIcon } from "lucide-react";
+import { ChevronRight, Loader2, RefreshCw, XIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -136,6 +138,45 @@ function DevModeSelectionOutline() {
 }
 
 const DEV_MODE_RAIL_WIDTH_REM = 18; // w-72
+
+type DevModeRailTab = "agent" | "history";
+
+/** Shape returned by GET /api/dev-mode/agent (SDK cloud agent list entries). */
+type LatestRunInfo = {
+  runId: string;
+  status: string;
+  createdAt?: number;
+  outputSummary: string;
+  eventPreview: string[];
+};
+
+type CloudAgentHistoryEntry = {
+  agentId: string;
+  name: string;
+  summary: string;
+  lastModified: number;
+  createdAt?: number;
+  status?: "running" | "finished" | "error";
+  archived?: boolean;
+  runtime?: "cloud";
+  repos?: string[];
+  latestRun?: LatestRunInfo;
+  detailError?: string;
+};
+
+function formatAgentTimestamp(ms: number | undefined): string {
+  if (ms == null || !Number.isFinite(ms)) {
+    return "—";
+  }
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(ms));
+  } catch {
+    return String(ms);
+  }
+}
 
 type AgentStreamEvent =
   | { type: "system"; model?: unknown; tools?: string[] }
@@ -550,7 +591,352 @@ function DevModeAgentTurnCard({ turn }: { turn: AgentTurn }) {
   );
 }
 
-function DevModeAgentPromptPanel() {
+function parseLatestRun(raw: unknown): LatestRunInfo | undefined {
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+  const lr = raw as Record<string, unknown>;
+  const runId = typeof lr.runId === "string" ? lr.runId : "";
+  const status = typeof lr.status === "string" ? lr.status : "";
+  const outputSummary =
+    typeof lr.outputSummary === "string" ? lr.outputSummary : "";
+  if (!runId || !status) {
+    return undefined;
+  }
+  const eventPreview = Array.isArray(lr.eventPreview)
+    ? lr.eventPreview.filter((x): x is string => typeof x === "string")
+    : [];
+  const createdAt =
+    typeof lr.createdAt === "number" ? lr.createdAt : undefined;
+  return {
+    runId,
+    status,
+    createdAt,
+    outputSummary,
+    eventPreview,
+  };
+}
+
+function DevModeAgentHistoryCard({ agent }: { agent: CloudAgentHistoryEntry }) {
+  const repos =
+    agent.runtime === "cloud" && agent.repos && agent.repos.length > 0
+      ? agent.repos
+      : [];
+
+  return (
+    <div
+      data-testid="dev-mode-agent-history-card"
+      className="border-border/60 bg-background/30 space-y-1.5 rounded-lg border p-2"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-1.5">
+        <p className="text-foreground min-w-0 flex-1 text-xs font-medium break-words">
+          {agent.name.trim().length > 0 ? agent.name : "Untitled agent"}
+        </p>
+        <div className="flex shrink-0 flex-wrap items-center gap-1">
+          {agent.archived ? (
+            <Badge variant="secondary" className="text-[0.65rem]">
+              Archived
+            </Badge>
+          ) : null}
+          {agent.status ? (
+            <Badge variant="outline" className="text-[0.65rem] capitalize">
+              {agent.status}
+            </Badge>
+          ) : null}
+        </div>
+      </div>
+      {agent.summary.trim().length > 0 ? (
+        <p className="text-muted-foreground line-clamp-3 text-[0.65rem] break-words">
+          {agent.summary}
+        </p>
+      ) : null}
+      <p className="text-muted-foreground font-mono text-[0.6rem] break-all">
+        {agent.agentId}
+      </p>
+      <div className="text-muted-foreground flex flex-col gap-0.5 text-[0.6rem]">
+        <p>
+          <span className="font-medium text-foreground/80">Modified:</span>{" "}
+          {formatAgentTimestamp(agent.lastModified)}
+        </p>
+        <p>
+          <span className="font-medium text-foreground/80">Created:</span>{" "}
+          {formatAgentTimestamp(agent.createdAt)}
+        </p>
+      </div>
+      {repos.length > 0 ? (
+        <p className="text-muted-foreground text-[0.6rem] break-all">
+          <span className="font-medium text-foreground/80">Repos:</span>{" "}
+          {repos.join(", ")}
+        </p>
+      ) : null}
+
+      {agent.detailError ? (
+        <div
+          data-testid="dev-mode-agent-history-detail-error"
+          className="border-border/50 rounded border bg-muted/35 px-2 py-1.5 text-[0.6rem]"
+        >
+          <span className="font-medium text-foreground">Latest run detail</span>
+          <p className="text-muted-foreground mt-0.5 break-words">
+            {agent.detailError}
+          </p>
+        </div>
+      ) : null}
+
+      {agent.latestRun ? (
+        <div
+          data-testid="dev-mode-agent-history-latest-run"
+          className="border-border/50 space-y-1.5 rounded border bg-card-02/35 px-2 py-1.5 dark:bg-card-01/25"
+        >
+          <p className="text-muted-foreground text-[0.6rem] font-semibold uppercase tracking-wide">
+            Latest run
+          </p>
+          <div className="text-muted-foreground flex flex-col gap-1 text-[0.6rem]">
+            <p className="break-all font-mono">{agent.latestRun.runId}</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className="text-[0.65rem] capitalize">
+                {agent.latestRun.status}
+              </Badge>
+              <span>
+                <span className="font-medium text-foreground/80">Run time:</span>{" "}
+                {formatAgentTimestamp(agent.latestRun.createdAt)}
+              </span>
+            </div>
+          </div>
+          {agent.latestRun.outputSummary.trim().length > 0 ? (
+            <pre className="text-foreground max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[0.65rem] leading-snug">
+              {agent.latestRun.outputSummary}
+            </pre>
+          ) : null}
+          {agent.latestRun.eventPreview.length > 0 ? (
+            <details className="group text-[0.6rem]">
+              <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                Event preview ({agent.latestRun.eventPreview.length})
+              </summary>
+              <ul className="border-border/40 mt-1 max-h-36 space-y-0.5 overflow-y-auto border-t pt-1 font-mono">
+                {agent.latestRun.eventPreview.map((line, i) => (
+                  <li
+                    key={`${agent.latestRun!.runId}-preview-${i}`}
+                    className="break-words"
+                  >
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+          {agent.latestRun.outputSummary.trim().length === 0 &&
+          agent.latestRun.eventPreview.length === 0 ? (
+            <p
+              data-testid="dev-mode-agent-history-no-output"
+              className="text-muted-foreground text-[0.6rem]"
+            >
+              No output lines captured for this run.
+            </p>
+          ) : null}
+        </div>
+      ) : !agent.detailError ? (
+        <p
+          data-testid="dev-mode-agent-history-no-run"
+          className="text-muted-foreground text-[0.6rem]"
+        >
+          No runs returned for this agent yet.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DevModeAgentHistoryPanel({
+  preload,
+  registerHistoryFetch,
+  historyLoadedRef,
+}: {
+  preload: boolean;
+  registerHistoryFetch?: (fn: (() => Promise<void>) | null) => void;
+  historyLoadedRef?: MutableRefObject<boolean>;
+}) {
+  const [agents, setAgents] = useState<CloudAgentHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasAutoFetched, setHasAutoFetched] = useState(false);
+
+  const fetchHistory = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/dev-mode/agent", { method: "GET" });
+      const data = (await res.json().catch(() => ({}))) as {
+        agents?: unknown;
+        error?: unknown;
+      };
+      if (!res.ok) {
+        const msg =
+          typeof data.error === "string"
+            ? data.error
+            : `HTTP ${res.status}`;
+        setError(msg);
+        setAgents([]);
+        return;
+      }
+      const raw = data.agents;
+      if (!Array.isArray(raw)) {
+        setError("Invalid response");
+        setAgents([]);
+        return;
+      }
+      const parsed: CloudAgentHistoryEntry[] = [];
+      for (const item of raw) {
+        if (!item || typeof item !== "object") continue;
+        const rec = item as Record<string, unknown>;
+        const agentId =
+          typeof rec.agentId === "string" ? rec.agentId : null;
+        const name = typeof rec.name === "string" ? rec.name : "";
+        const summary = typeof rec.summary === "string" ? rec.summary : "";
+        const lastModified =
+          typeof rec.lastModified === "number" ? rec.lastModified : 0;
+        if (!agentId) continue;
+        const entry: CloudAgentHistoryEntry = {
+          agentId,
+          name,
+          summary,
+          lastModified,
+        };
+        if (typeof rec.createdAt === "number") {
+          entry.createdAt = rec.createdAt;
+        }
+        if (
+          rec.status === "running" ||
+          rec.status === "finished" ||
+          rec.status === "error"
+        ) {
+          entry.status = rec.status;
+        }
+        if (rec.archived === true) {
+          entry.archived = true;
+        }
+        if (rec.runtime === "cloud") {
+          entry.runtime = "cloud";
+        }
+        if (Array.isArray(rec.repos)) {
+          entry.repos = rec.repos.filter(
+            (u): u is string => typeof u === "string"
+          );
+        }
+        const lr = parseLatestRun(rec.latestRun);
+        if (lr) {
+          entry.latestRun = lr;
+        }
+        if (typeof rec.detailError === "string" && rec.detailError.length > 0) {
+          entry.detailError = rec.detailError;
+        }
+        parsed.push(entry);
+      }
+      setAgents(parsed);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setAgents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (historyLoadedRef) {
+      historyLoadedRef.current = hasAutoFetched;
+    }
+  }, [hasAutoFetched, historyLoadedRef]);
+
+  useEffect(() => {
+    registerHistoryFetch?.(fetchHistory);
+    return () => registerHistoryFetch?.(null);
+  }, [fetchHistory, registerHistoryFetch]);
+
+  useEffect(() => {
+    if (!preload || hasAutoFetched) {
+      return;
+    }
+    setHasAutoFetched(true);
+    void fetchHistory();
+  }, [fetchHistory, hasAutoFetched, preload]);
+
+  return (
+    <div
+      data-testid="dev-mode-agent-history"
+      className="flex min-h-0 flex-1 flex-col gap-2 p-2"
+    >
+      <div className="flex shrink-0 items-start justify-between gap-2">
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-muted-foreground text-[0.65rem] font-semibold tracking-wide uppercase">
+            History
+          </p>
+          <p className="text-muted-foreground text-[0.6rem] leading-snug">
+            Cloud agents visible to your API key (SDK list).
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="shrink-0 gap-1"
+          data-testid="dev-mode-agent-history-refresh"
+          disabled={loading}
+          onClick={() => void fetchHistory()}
+        >
+          {loading ? (
+            <Loader2 aria-hidden className="size-3.5 animate-spin" />
+          ) : (
+            <RefreshCw aria-hidden className="size-3.5" />
+          )}
+          Refresh
+        </Button>
+      </div>
+
+      {loading && agents.length === 0 ? (
+        <div
+          data-testid="dev-mode-agent-history-loading"
+          className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 py-8 text-xs"
+        >
+          <Loader2 aria-hidden className="text-primary size-6 animate-spin" />
+          <span>Loading agents and latest runs…</span>
+        </div>
+      ) : null}
+
+      {error ? (
+        <div
+          data-testid="dev-mode-agent-history-error"
+          className="border-destructive/40 rounded border bg-destructive/10 px-2 py-2 text-xs"
+        >
+          <span className="text-destructive font-medium">Could not load</span>
+          <p className="text-foreground mt-1 break-words">{error}</p>
+        </div>
+      ) : null}
+
+      {!loading && !error && agents.length === 0 ? (
+        <p
+          data-testid="dev-mode-agent-history-empty"
+          className="text-muted-foreground py-6 text-center text-xs"
+        >
+          No cloud agents yet.
+        </p>
+      ) : null}
+
+      {agents.length > 0 ? (
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-0.5">
+          {agents.map((a) => (
+            <DevModeAgentHistoryCard key={a.agentId} agent={a} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DevModeAgentPromptPanel({
+  onPromptTerminal,
+}: {
+  onPromptTerminal?: () => void;
+}) {
   const { agentId, agentStatus } = useDevMode();
   const [turns, setTurns] = useState<AgentTurn[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -598,6 +984,15 @@ function DevModeAgentPromptPanel() {
       if (!agentId) {
         return;
       }
+      let terminalRefreshNotified = false;
+      const notifyTerminalOnce = () => {
+        if (terminalRefreshNotified) {
+          return;
+        }
+        terminalRefreshNotified = true;
+        onPromptTerminal?.();
+      };
+
       const ac = new AbortController();
       abortRef.current = ac;
 
@@ -618,6 +1013,7 @@ function DevModeAgentPromptPanel() {
               ? errBody.error
               : `HTTP ${res.status}`;
           applyEventToTurn(turnId, { type: "error", message: msg });
+          notifyTerminalOnce();
           return;
         }
 
@@ -627,6 +1023,7 @@ function DevModeAgentPromptPanel() {
             type: "error",
             message: "No response body",
           });
+          notifyTerminalOnce();
           return;
         }
 
@@ -648,6 +1045,9 @@ function DevModeAgentPromptPanel() {
             const ev = parseAgentStreamLine(line);
             if (ev) {
               applyEventToTurn(turnId, ev);
+              if (ev.type === "done" || ev.type === "error") {
+                notifyTerminalOnce();
+              }
             }
           }
         }
@@ -656,7 +1056,14 @@ function DevModeAgentPromptPanel() {
           const ev = parseAgentStreamLine(buffer);
           if (ev) {
             applyEventToTurn(turnId, ev);
+            if (ev.type === "done" || ev.type === "error") {
+              notifyTerminalOnce();
+            }
           }
+        }
+
+        if (!terminalRefreshNotified) {
+          notifyTerminalOnce();
         }
       } catch (err) {
         const isAbort =
@@ -665,10 +1072,12 @@ function DevModeAgentPromptPanel() {
             : err instanceof Error && err.name === "AbortError";
         if (isAbort) {
           applyEventToTurn(turnId, { type: "error", message: "Cancelled" });
+          notifyTerminalOnce();
           return;
         }
         const message = err instanceof Error ? err.message : String(err);
         applyEventToTurn(turnId, { type: "error", message });
+        notifyTerminalOnce();
       } finally {
         if (abortRef.current === ac) {
           abortRef.current = null;
@@ -682,7 +1091,7 @@ function DevModeAgentPromptPanel() {
         );
       }
     },
-    [agentId, applyEventToTurn]
+    [agentId, applyEventToTurn, onPromptTerminal]
   );
 
   const onSubmit = useCallback(
@@ -734,9 +1143,6 @@ function DevModeAgentPromptPanel() {
       data-testid="dev-mode-agent-form"
       className="flex min-h-0 flex-1 flex-col gap-2 p-2"
     >
-      <p className="text-muted-foreground text-[0.65rem] font-semibold tracking-wide uppercase">
-        Cloud agent
-      </p>
       <form onSubmit={onSubmit} className="flex shrink-0 flex-col gap-2">
         <textarea
           data-testid="dev-mode-agent-prompt"
@@ -942,6 +1348,23 @@ function DevModeSelectedElementCollapsible({
 
 function DevModeRightRail() {
   const { enabled, selected, setSelected } = useDevMode();
+  const [railTab, setRailTab] = useState<DevModeRailTab>("agent");
+  const historyFetchRef = useRef<(() => Promise<void>) | null>(null);
+  const historyHasLoadedRef = useRef(false);
+
+  const registerHistoryFetch = useCallback(
+    (fn: (() => Promise<void>) | null) => {
+      historyFetchRef.current = fn;
+    },
+    []
+  );
+
+  const onPromptTerminal = useCallback(() => {
+    if (!historyHasLoadedRef.current) {
+      return;
+    }
+    void historyFetchRef.current?.();
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -978,7 +1401,76 @@ function DevModeRightRail() {
           data-testid="dev-mode-rail-primary-slot"
           aria-label="Dev tools"
         >
-          <DevModeAgentPromptPanel />
+          <div
+            role="tablist"
+            aria-label="Dev tools sections"
+            data-testid="dev-mode-rail-tabs"
+            className="border-border/60 flex shrink-0 border-b"
+          >
+            <button
+              type="button"
+              role="tab"
+              id="dev-mode-tab-agent"
+              aria-selected={railTab === "agent"}
+              aria-controls="dev-mode-tabpanel-agent"
+              data-testid="dev-mode-tab-agent"
+              className={cn(
+                "text-foreground/90 hover:bg-muted/40 flex min-h-10 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors",
+                railTab === "agent"
+                  ? "border-primary text-primary border-b-2 pb-[calc(0.5rem-2px)]"
+                  : "text-muted-foreground border-b-2 border-transparent pb-2"
+              )}
+              onClick={() => setRailTab("agent")}
+            >
+              Cloud agent
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="dev-mode-tab-history"
+              aria-selected={railTab === "history"}
+              aria-controls="dev-mode-tabpanel-history"
+              data-testid="dev-mode-tab-history"
+              className={cn(
+                "text-foreground/90 hover:bg-muted/40 flex min-h-10 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors",
+                railTab === "history"
+                  ? "border-primary text-primary border-b-2 pb-[calc(0.5rem-2px)]"
+                  : "text-muted-foreground border-b-2 border-transparent pb-2"
+              )}
+              onClick={() => setRailTab("history")}
+            >
+              History
+            </button>
+          </div>
+
+          <div
+            role="tabpanel"
+            id="dev-mode-tabpanel-agent"
+            aria-labelledby="dev-mode-tab-agent"
+            hidden={railTab !== "agent"}
+            className={cn(
+              "min-h-0 flex-1 flex-col overflow-hidden",
+              railTab === "agent" ? "flex" : "hidden"
+            )}
+          >
+            <DevModeAgentPromptPanel onPromptTerminal={onPromptTerminal} />
+          </div>
+          <div
+            role="tabpanel"
+            id="dev-mode-tabpanel-history"
+            aria-labelledby="dev-mode-tab-history"
+            hidden={railTab !== "history"}
+            className={cn(
+              "min-h-0 flex-1 flex-col overflow-hidden",
+              railTab === "history" ? "flex" : "hidden"
+            )}
+          >
+            <DevModeAgentHistoryPanel
+              preload={railTab === "history"}
+              registerHistoryFetch={registerHistoryFetch}
+              historyLoadedRef={historyHasLoadedRef}
+            />
+          </div>
         </div>
 
         {selected != null ? (

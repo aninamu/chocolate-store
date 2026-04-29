@@ -66,6 +66,85 @@ function TestRoot({ children }: { children: ReactNode }) {
 
 const fetchMock = vi.fn();
 
+const MOCK_HISTORY_AGENTS = [
+  {
+    agentId: "bc-history-1",
+    name: "Demo Agent",
+    summary: "A test cloud agent",
+    lastModified: 1_700_000_000_000,
+    createdAt: 1_699_900_000_000,
+    status: "finished" as const,
+    archived: false,
+    runtime: "cloud" as const,
+    repos: ["https://github.com/org/repo"],
+    latestRun: {
+      runId: "run-bc-1",
+      status: "finished",
+      createdAt: 1_699_910_000_000,
+      outputSummary: "Shipped the chocolate checkout fix.",
+      eventPreview: ["User: Hello", "Assistant: Done."],
+    },
+  },
+  {
+    agentId: "bc-history-2",
+    name: "No Runs Yet",
+    summary: "",
+    lastModified: 1_699_800_000_000,
+    createdAt: 1_699_700_000_000,
+    status: "finished" as const,
+    archived: false,
+    runtime: "cloud" as const,
+    repos: [],
+  },
+];
+
+async function defaultDevModeFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const url = typeof input === "string" ? input : input.toString();
+  if (url.includes("/api/dev-mode/agent/send")) {
+    return ndjsonResponse([
+      { type: "system", model: { id: "composer-2" }, tools: ["grep"] },
+      { type: "assistant", text: "Hello" },
+      { type: "assistant", text: " world" },
+      { type: "done", runStatus: "finished" },
+    ]);
+  }
+  if (url.includes("/api/dev-mode/agent")) {
+    const method = init?.method ?? "GET";
+    if (method === "DELETE") {
+      return new Response(null, { status: 204 });
+    }
+    if (method === "GET") {
+      return new Response(
+        JSON.stringify({ agents: MOCK_HISTORY_AGENTS }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+    if (method === "POST") {
+      return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  return new Response("not found", { status: 404 });
+}
+
+function historyGetCallCount(): number {
+  return fetchMock.mock.calls.filter(([input, init]) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (!url.includes("/api/dev-mode/agent")) {
+      return false;
+    }
+    return (init?.method ?? "GET") === "GET";
+  }).length;
+}
+
 describe("DevMode", () => {
   afterEach(() => {
     cleanup();
@@ -75,29 +154,7 @@ describe("DevMode", () => {
 
   beforeEach(() => {
     setDesktopViewport();
-    fetchMock.mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === "string" ? input : input.toString();
-        if (url.includes("/api/dev-mode/agent/send")) {
-          return ndjsonResponse([
-            { type: "system", model: { id: "composer-2" }, tools: ["grep"] },
-            { type: "assistant", text: "Hello" },
-            { type: "assistant", text: " world" },
-            { type: "done", runStatus: "finished" },
-          ]);
-        }
-        if (url.includes("/api/dev-mode/agent")) {
-          if (init?.method === "DELETE") {
-            return new Response(null, { status: 204 });
-          }
-          return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-        return new Response("not found", { status: 404 });
-      }
-    );
+    fetchMock.mockImplementation(defaultDevModeFetch);
     vi.stubGlobal("fetch", fetchMock);
   });
 
@@ -160,7 +217,9 @@ describe("DevMode", () => {
     });
 
     expect(within(rail).getByText("Say hi")).toBeInTheDocument();
-    expect(within(rail).getByText(/finished/i)).toBeInTheDocument();
+    expect(within(rail).getByTestId("dev-mode-agent-answer")).toHaveTextContent(
+      "Hello world"
+    );
 
     expect(screen.queryAllByTestId("dev-mode-agent-event")).toHaveLength(0);
 
@@ -220,16 +279,7 @@ describe("DevMode", () => {
             }
           );
         }
-        if (url.includes("/api/dev-mode/agent")) {
-          if (init?.method === "DELETE") {
-            return new Response(null, { status: 204 });
-          }
-          return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-        return new Response("not found", { status: 404 });
+        return defaultDevModeFetch(input, init);
       }
     );
 
@@ -275,8 +325,12 @@ describe("DevMode", () => {
           return ndjsonResponse([{ type: "done", runStatus: "finished" }]);
         }
         if (url.includes("/api/dev-mode/agent")) {
-          if (init?.method === "DELETE") {
+          const method = init?.method ?? "GET";
+          if (method === "DELETE") {
             return new Response(null, { status: 204 });
+          }
+          if (method === "GET") {
+            return defaultDevModeFetch(input, init);
           }
           await gate;
           return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
@@ -322,8 +376,12 @@ describe("DevMode", () => {
           return ndjsonResponse([{ type: "done", runStatus: "finished" }]);
         }
         if (url.includes("/api/dev-mode/agent")) {
-          if (init?.method === "DELETE") {
+          const method = init?.method ?? "GET";
+          if (method === "DELETE") {
             return new Response(null, { status: 204 });
+          }
+          if (method === "GET") {
+            return defaultDevModeFetch(input, init);
           }
           return new Response(JSON.stringify({ error: "no key" }), {
             status: 503,
@@ -399,6 +457,216 @@ describe("DevMode", () => {
           method: "DELETE",
           body: JSON.stringify({ agentId: "bc-test-agent" }),
         })
+      );
+    });
+  });
+
+  it("loads history once on first open and reuses cached data on tab re-open", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestRoot>
+        <p>Hello</p>
+      </TestRoot>
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
+        "Agent: connected"
+      );
+    });
+
+    expect(historyGetCallCount()).toBe(0);
+
+    await user.click(screen.getByTestId("dev-mode-tab-history"));
+
+    await waitFor(() => {
+      expect(historyGetCallCount()).toBe(1);
+    });
+
+    const rail = screen.getByTestId("dev-mode-rail");
+    await waitFor(() => {
+      expect(
+        within(rail).getAllByTestId("dev-mode-agent-history-card").length
+      ).toBe(2);
+    });
+    expect(within(rail).getByText("Demo Agent")).toBeInTheDocument();
+    expect(within(rail).getByText("bc-history-1")).toBeInTheDocument();
+    expect(within(rail).getByText(/github\.com\/org\/repo/)).toBeInTheDocument();
+
+    const cards = within(rail).getAllByTestId("dev-mode-agent-history-card");
+    expect(cards.length).toBe(2);
+    expect(
+      within(cards[0]!).getByTestId("dev-mode-agent-history-latest-run")
+    ).toHaveTextContent("run-bc-1");
+    expect(
+      within(cards[0]!).getByText(/Shipped the chocolate checkout fix/)
+    ).toBeInTheDocument();
+    expect(
+      within(cards[1]!).getByTestId("dev-mode-agent-history-no-run")
+    ).toBeInTheDocument();
+    await user.click(screen.getByTestId("dev-mode-tab-agent"));
+    await user.click(screen.getByTestId("dev-mode-tab-history"));
+    expect(historyGetCallCount()).toBe(1);
+  });
+
+  it("refetches history once after a prompt stream completes when History was loaded", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestRoot>
+        <p>Hello</p>
+      </TestRoot>
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
+        "Agent: connected"
+      );
+    });
+
+    await user.click(screen.getByTestId("dev-mode-tab-history"));
+
+    await waitFor(() => {
+      expect(historyGetCallCount()).toBe(1);
+    });
+
+    await user.click(screen.getByTestId("dev-mode-tab-agent"));
+
+    await user.type(screen.getByTestId("dev-mode-agent-prompt"), "Say hi");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-submit")).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId("dev-mode-agent-submit"));
+
+    const rail = screen.getByTestId("dev-mode-rail");
+
+    await waitFor(() => {
+      expect(within(rail).getByTestId("dev-mode-agent-answer")).toHaveTextContent(
+        "Hello world"
+      );
+    });
+
+    await waitFor(() => {
+      expect(historyGetCallCount()).toBe(2);
+    });
+  });
+
+  it("shows per-agent detail error when latest run enrichment fails", async () => {
+    fetchMock.mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.includes("/api/dev-mode/agent/send")) {
+          return ndjsonResponse([{ type: "done", runStatus: "finished" }]);
+        }
+        if (url.includes("/api/dev-mode/agent")) {
+          const method = init?.method ?? "GET";
+          if (method === "DELETE") {
+            return new Response(null, { status: 204 });
+          }
+          if (method === "GET") {
+            return new Response(
+              JSON.stringify({
+                agents: [
+                  {
+                    agentId: "bc-bad",
+                    name: "Broken detail",
+                    summary: "",
+                    lastModified: 1,
+                    detailError: "cannot list runs",
+                  },
+                ],
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+          return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("not found", { status: 404 });
+      }
+    );
+
+    const user = userEvent.setup();
+    render(
+      <TestRoot>
+        <p>Hello</p>
+      </TestRoot>
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
+        "Agent: connected"
+      );
+    });
+
+    await user.click(screen.getByTestId("dev-mode-tab-history"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("dev-mode-agent-history-detail-error")
+      ).toHaveTextContent("cannot list runs");
+    });
+  });
+
+  it("shows history error when listing agents fails", async () => {
+    fetchMock.mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.includes("/api/dev-mode/agent/send")) {
+          return ndjsonResponse([{ type: "done", runStatus: "finished" }]);
+        }
+        if (url.includes("/api/dev-mode/agent")) {
+          const method = init?.method ?? "GET";
+          if (method === "DELETE") {
+            return new Response(null, { status: 204 });
+          }
+          if (method === "GET") {
+            return new Response(JSON.stringify({ error: "list failed" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify({ agentId: "bc-test-agent" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("not found", { status: 404 });
+      }
+    );
+
+    const user = userEvent.setup();
+    render(
+      <TestRoot>
+        <p>Hello</p>
+      </TestRoot>
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
+        "Agent: connected"
+      );
+    });
+
+    await user.click(screen.getByTestId("dev-mode-tab-history"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dev-mode-agent-history-error")).toHaveTextContent(
+        "list failed"
       );
     });
   });
