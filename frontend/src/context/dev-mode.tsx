@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 
@@ -221,7 +222,11 @@ type DevModeContextValue = {
   enabled: boolean;
   setEnabled: (next: boolean) => void;
   selected: DevModeElementSnapshot | null;
-  setSelected: (snap: DevModeElementSnapshot | null) => void;
+  setSelected: (
+    snap: DevModeElementSnapshot | null,
+    sourceElement?: Element | null
+  ) => void;
+  selectedElementRef: MutableRefObject<Element | null>;
   isInsideDevModeUi: typeof isInsideDevModeUi;
   agentId: string | null;
   agentStatus: DevModeAgentStatus;
@@ -231,7 +236,10 @@ const DevModeContext = createContext<DevModeContextValue | null>(null);
 
 export function DevModeProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabledState] = useState(false);
-  const [selected, setSelected] = useState<DevModeElementSnapshot | null>(null);
+  const [selected, setSelectedState] = useState<DevModeElementSnapshot | null>(
+    null
+  );
+  const selectedElementRef = useRef<Element | null>(null);
   const [agentId, setAgentId] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] =
     useState<DevModeAgentStatus>("idle");
@@ -299,12 +307,31 @@ export function DevModeProvider({ children }: { children: ReactNode }) {
     };
   }, [enabled]);
 
-  const setEnabled = useCallback((next: boolean) => {
-    setEnabledState(next);
-    if (!next) {
-      setSelected(null);
-    }
-  }, []);
+  const setSelected = useCallback(
+    (snap: DevModeElementSnapshot | null, sourceElement?: Element | null) => {
+      setSelectedState(snap);
+      if (snap == null) {
+        selectedElementRef.current = null;
+        return;
+      }
+      selectedElementRef.current =
+        sourceElement != null && sourceElement.isConnected
+          ? sourceElement
+          : null;
+    },
+    []
+  );
+
+  const setEnabled = useCallback(
+    (next: boolean) => {
+      setEnabledState(next);
+      if (!next) {
+        setSelectedState(null);
+        selectedElementRef.current = null;
+      }
+    },
+    []
+  );
 
   const value = useMemo(
     () =>
@@ -313,11 +340,12 @@ export function DevModeProvider({ children }: { children: ReactNode }) {
         setEnabled,
         selected,
         setSelected,
+        selectedElementRef,
         isInsideDevModeUi,
         agentId,
         agentStatus,
       }) satisfies DevModeContextValue,
-    [agentId, agentStatus, enabled, selected, setEnabled]
+    [agentId, agentStatus, enabled, selected, setEnabled, setSelected]
   );
 
   return (
