@@ -31,11 +31,11 @@ describe("fetchChocolates", () => {
     expect(url).toContain("tag=milk");
   });
 
-  it("uses a single tag param when tag is provided", async () => {
+  it("sends one tag param for a single selected tag", async () => {
     const fetchMock = vi.mocked(globalThis.fetch);
     vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
 
-    await fetchChocolates({ tag: "dark" });
+    await fetchChocolates({ tags: ["dark"] });
 
     const url = String(fetchMock.mock.calls[0]?.[0]);
     expect(url).toContain("tag=dark");

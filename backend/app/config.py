@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     cache_ttl_seconds: int = 60
-    api_prefix: str = ""
 
 
 settings = Settings()

@@ -202,9 +202,6 @@ type AgentTurn = {
 
 type TurnView = {
   assistantText: string;
-  thinkingText: string | null;
-  toolActivity: string | null;
-  taskText: string | null;
   errorMessage: string | null;
   runStatus: string | null;
   toolCallCount: number;
@@ -212,9 +209,6 @@ type TurnView = {
 
 function summarizeTurn(turn: AgentTurn): TurnView {
   let assistantText = "";
-  let thinkingText: string | null = null;
-  let toolActivity: string | null = null;
-  let taskText: string | null = null;
   let errorMessage: string | null = null;
   let runStatus: string | null = null;
   let toolCallCount = 0;
@@ -224,23 +218,9 @@ function summarizeTurn(turn: AgentTurn): TurnView {
       case "assistant":
         assistantText += ev.text;
         break;
-      case "thinking":
-        thinkingText = ev.text;
-        break;
       case "tool_call":
         toolCallCount += 1;
-        toolActivity = ev.name;
         break;
-      case "task": {
-        const line =
-          ev.text?.trim() ||
-          ev.status?.trim() ||
-          null;
-        if (line) {
-          taskText = line;
-        }
-        break;
-      }
       case "error":
         if (!errorMessage) {
           errorMessage = ev.message;
@@ -256,9 +236,6 @@ function summarizeTurn(turn: AgentTurn): TurnView {
 
   return {
     assistantText,
-    thinkingText,
-    toolActivity,
-    taskText,
     errorMessage,
     runStatus,
     toolCallCount,
@@ -753,7 +730,7 @@ function DevModeAgentHistoryPanel({
 }: {
   preload: boolean;
   registerHistoryFetch?: (fn: (() => Promise<void>) | null) => void;
-  historyLoadedRef?: MutableRefObject<boolean>;
+  historyLoadedRef: MutableRefObject<boolean>;
 }) {
   const [agents, setAgents] = useState<CloudAgentHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -842,9 +819,7 @@ function DevModeAgentHistoryPanel({
   }, []);
 
   useEffect(() => {
-    if (historyLoadedRef) {
-      historyLoadedRef.current = hasAutoFetched;
-    }
+    historyLoadedRef.current = hasAutoFetched;
   }, [hasAutoFetched, historyLoadedRef]);
 
   useEffect(() => {
@@ -1448,10 +1423,7 @@ function DevModeRightRail() {
             id="dev-mode-tabpanel-agent"
             aria-labelledby="dev-mode-tab-agent"
             hidden={railTab !== "agent"}
-            className={cn(
-              "min-h-0 flex-1 flex-col overflow-hidden",
-              railTab === "agent" ? "flex" : "hidden"
-            )}
+            className="min-h-0 flex-1 flex-col overflow-hidden"
           >
             <DevModeAgentPromptPanel onPromptTerminal={onPromptTerminal} />
           </div>
@@ -1460,10 +1432,7 @@ function DevModeRightRail() {
             id="dev-mode-tabpanel-history"
             aria-labelledby="dev-mode-tab-history"
             hidden={railTab !== "history"}
-            className={cn(
-              "min-h-0 flex-1 flex-col overflow-hidden",
-              railTab === "history" ? "flex" : "hidden"
-            )}
+            className="min-h-0 flex-1 flex-col overflow-hidden"
           >
             <DevModeAgentHistoryPanel
               preload={railTab === "history"}

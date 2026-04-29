@@ -9,7 +9,6 @@ import asyncio
 from app.db import AsyncSessionFactory, engine
 from app.models.base import Base
 from app.models.chocolate import Chocolate
-import app.models.chocolate  # noqa: F401  ensure models are registered on Base.metadata
 from app.seed import SEED, slugify
 
 

@@ -261,7 +261,7 @@ function ShopContent() {
     queryFn: () =>
       fetchChocolates({
         tags: tagQ.length ? tagQ : undefined,
-        sort: sortQ || "name",
+        sort: sortQ,
       }),
   });
 

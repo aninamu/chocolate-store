@@ -1,5 +1,4 @@
-import type { SDKMessage, TextBlock, ToolUseBlock } from "@cursor/sdk";
-import type { Run } from "@cursor/sdk";
+import type { Run, SDKMessage, TextBlock, ToolUseBlock } from "@cursor/sdk";
 
 import { agents } from "@/server/dev-mode-agents";
 

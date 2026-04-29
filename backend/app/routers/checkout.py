@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import logging
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,8 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.models.chocolate import Chocolate, Order, OrderItem
 from app.schemas.chocolate import CheckoutIn, CheckoutOut
-
-log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -63,6 +58,5 @@ async def checkout(
             )
 
         order.total_cents = total
-        await session.flush()
 
     return CheckoutOut(order_id=order.id, total_cents=total)

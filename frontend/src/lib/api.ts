@@ -3,7 +3,6 @@ import type { CheckoutPayload, CheckoutResponse, Chocolate } from "@/lib/types";
 const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export async function fetchChocolates(params?: {
-  tag?: string;
   /** Multiple `tag` query params; API matches if the chocolate has any listed tag. */
   tags?: string[];
   sort?: string;
@@ -13,8 +12,6 @@ export async function fetchChocolates(params?: {
     for (const t of params.tags) {
       if (t) u.searchParams.append("tag", t);
     }
-  } else if (params?.tag) {
-    u.searchParams.set("tag", params.tag);
   }
   if (params?.sort) u.searchParams.set("sort", params.sort);
   const res = await fetch(u.toString(), { cache: "no-store" });
