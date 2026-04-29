@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "chocolate store",
+  title: "cursor's fine chocolate",
   description: "Field-engineer friendly demo: browse, save, cart, and mock checkout.",
 };
 

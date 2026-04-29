@@ -30,7 +30,7 @@ export function Header() {
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest text-primary dark:bg-primary/20">
             Est. 2024
           </span>
-          <span className="text-lg font-semibold tracking-tight">Chocolate Store</span>
+          <span className="text-lg font-semibold tracking-tight">cursor&apos;s fine chocolate</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
@@ -107,7 +107,7 @@ export function HomeFooter() {
             <Heart className="size-4" />
           </span>
           <span className="max-w-md leading-relaxed">
-            Handcrafted in small batches · © {new Date().getFullYear()} Chocolate Store
+            Handcrafted in small batches · © {new Date().getFullYear()} cursor&apos;s fine chocolate
           </span>
         </p>
       </div>

@@ -1,4 +1,4 @@
-# chocolate store
+# cursor's fine chocolate
 
 A field-engineer friendly demo: browse a chocolate marketplace, save items, use a local cart, and run a **mock** checkout. No user accounts. **Next.js 15 (App Router + Tailwind + shadcn/ui)**, **FastAPI**, **Postgres** (user-level `pg_ctl`, project-local data dir), **Redis** (user-level `redis-server`, local port), all in **dev mode with hot reload**.
 
