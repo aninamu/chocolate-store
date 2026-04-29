@@ -962,7 +962,7 @@ function DevModeAgentPromptPanel({
           }
           const nextEvents = [...t.events, ev];
           let nextStatus = t.status;
-          if (ev.type === "done") {
+          if (ev.type === "done" && t.status !== "error") {
             nextStatus = "done";
           }
           if (ev.type === "error") {
