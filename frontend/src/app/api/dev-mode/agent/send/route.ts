@@ -108,8 +108,17 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let run: Run | null = null;
+      let cancelled = false;
+      let waitAttempted = false;
+      const cancelRun = async () => {
+        if (!run || cancelled) {
+          return;
+        }
+        cancelled = true;
+        await run.cancel();
+      };
       const onAbort = () => {
-        void run?.cancel();
+        void cancelRun();
       };
       request.signal.addEventListener("abort", onAbort);
 
@@ -118,7 +127,7 @@ export async function POST(request: Request) {
 
         for await (const msg of run.stream()) {
           if (request.signal.aborted) {
-            await run.cancel();
+            await cancelRun();
             break;
           }
           const line = mapSdkMessage(msg);
@@ -127,13 +136,22 @@ export async function POST(request: Request) {
           }
         }
 
+        if (request.signal.aborted || cancelled) {
+          return;
+        }
+
+        waitAttempted = true;
         const result = await run.wait();
         enqueue(controller, { type: "done", runStatus: result.status });
       } catch (err) {
+        if (request.signal.aborted || cancelled) {
+          return;
+        }
         const message = err instanceof Error ? err.message : String(err);
         enqueue(controller, { type: "error", message });
-        if (run) {
+        if (run && !waitAttempted) {
           try {
+            waitAttempted = true;
             const result = await run.wait();
             enqueue(controller, { type: "done", runStatus: result.status });
           } catch {
