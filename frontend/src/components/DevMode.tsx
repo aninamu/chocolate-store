@@ -4,11 +4,14 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
+  type FormEvent,
+  type KeyboardEvent,
 } from "react";
 
-import { ChevronRight, XIcon } from "lucide-react";
+import { ChevronRight, Loader2, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -133,6 +136,655 @@ function DevModeSelectionOutline() {
 }
 
 const DEV_MODE_RAIL_WIDTH_REM = 18; // w-72
+
+type AgentStreamEvent =
+  | { type: "system"; model?: unknown; tools?: string[] }
+  | { type: "assistant"; text: string }
+  | { type: "thinking"; text: string }
+  | {
+      type: "tool_call";
+      name: string;
+      status: string;
+      callId: string;
+    }
+  | { type: "status"; status: string; message?: string }
+  | { type: "task"; status?: string; text?: string }
+  | { type: "error"; message: string }
+  | { type: "done"; runStatus: string };
+
+type AgentTurn = {
+  id: string;
+  prompt: string;
+  events: AgentStreamEvent[];
+  status: "streaming" | "done" | "error";
+};
+
+type TurnView = {
+  assistantText: string;
+  thinkingText: string | null;
+  toolActivity: string | null;
+  taskText: string | null;
+  errorMessage: string | null;
+  runStatus: string | null;
+  toolCallCount: number;
+};
+
+function summarizeTurn(turn: AgentTurn): TurnView {
+  let assistantText = "";
+  let thinkingText: string | null = null;
+  let toolActivity: string | null = null;
+  let taskText: string | null = null;
+  let errorMessage: string | null = null;
+  let runStatus: string | null = null;
+  let toolCallCount = 0;
+
+  for (const ev of turn.events) {
+    switch (ev.type) {
+      case "assistant":
+        assistantText += ev.text;
+        break;
+      case "thinking":
+        thinkingText = ev.text;
+        break;
+      case "tool_call":
+        toolCallCount += 1;
+        toolActivity = ev.name;
+        break;
+      case "task": {
+        const line =
+          ev.text?.trim() ||
+          ev.status?.trim() ||
+          null;
+        if (line) {
+          taskText = line;
+        }
+        break;
+      }
+      case "error":
+        if (!errorMessage) {
+          errorMessage = ev.message;
+        }
+        break;
+      case "done":
+        runStatus = ev.runStatus;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return {
+    assistantText,
+    thinkingText,
+    toolActivity,
+    taskText,
+    errorMessage,
+    runStatus,
+    toolCallCount,
+  };
+}
+
+function streamingProgressLabel(events: AgentStreamEvent[]): string {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev.type === "task") {
+      const line = ev.text?.trim() || ev.status?.trim();
+      if (line) {
+        return line;
+      }
+    }
+  }
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev.type === "tool_call" && ev.name.length > 0) {
+      return `Running ${ev.name}…`;
+    }
+  }
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev.type === "thinking") {
+      return "Thinking…";
+    }
+  }
+  let assistantSoFar = "";
+  for (const ev of events) {
+    if (ev.type === "assistant") {
+      assistantSoFar += ev.text;
+    }
+  }
+  if (assistantSoFar.trim().length > 0) {
+    return "Writing response…";
+  }
+  return "Working…";
+}
+
+function parseAgentStreamLine(raw: string): AgentStreamEvent | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || !("type" in parsed)) {
+    return null;
+  }
+  const t = (parsed as { type: unknown }).type;
+  if (typeof t !== "string") {
+    return null;
+  }
+  switch (t) {
+    case "system":
+      return {
+        type: "system",
+        model: (parsed as { model?: unknown }).model,
+        tools: (parsed as { tools?: string[] }).tools,
+      };
+    case "assistant":
+      return {
+        type: "assistant",
+        text: String((parsed as { text?: unknown }).text ?? ""),
+      };
+    case "thinking":
+      return {
+        type: "thinking",
+        text: String((parsed as { text?: unknown }).text ?? ""),
+      };
+    case "tool_call":
+      return {
+        type: "tool_call",
+        name: String((parsed as { name?: unknown }).name ?? ""),
+        status: String((parsed as { status?: unknown }).status ?? ""),
+        callId: String((parsed as { callId?: unknown }).callId ?? ""),
+      };
+    case "status": {
+      const rec = parsed as Record<string, unknown>;
+      const statusMsg = rec.message;
+      return {
+        type: "status",
+        status: String(rec.status ?? ""),
+        message: typeof statusMsg === "string" ? statusMsg : undefined,
+      };
+    }
+    case "task": {
+      const rec = parsed as Record<string, unknown>;
+      const taskStatus = rec.status;
+      const taskText = rec.text;
+      return {
+        type: "task",
+        status: typeof taskStatus === "string" ? taskStatus : undefined,
+        text: typeof taskText === "string" ? taskText : undefined,
+      };
+    }
+    case "error":
+      return {
+        type: "error",
+        message: String((parsed as { message?: unknown }).message ?? ""),
+      };
+    case "done":
+      return {
+        type: "done",
+        runStatus: String((parsed as { runStatus?: unknown }).runStatus ?? ""),
+      };
+    default:
+      return null;
+  }
+}
+
+function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
+  switch (ev.type) {
+    case "assistant":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">assistant</span>
+          <pre className="text-foreground mt-0.5 max-h-32 overflow-auto whitespace-pre-wrap break-all">
+            {ev.text}
+          </pre>
+        </div>
+      );
+    case "system":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">system</span>
+          <pre className="text-muted-foreground mt-0.5 max-h-24 overflow-auto text-[0.65rem] break-all whitespace-pre-wrap">
+            {JSON.stringify({ model: ev.model, tools: ev.tools }, null, 2)}
+          </pre>
+        </div>
+      );
+    case "thinking":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">thinking</span>
+          <pre className="text-muted-foreground mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap break-all">
+            {ev.text}
+          </pre>
+        </div>
+      );
+    case "tool_call":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">tool_call</span>{" "}
+          <span className="text-foreground">{ev.name}</span>{" "}
+          <span className="text-muted-foreground">{ev.status}</span>{" "}
+          <span className="text-muted-foreground/80">{ev.callId}</span>
+        </div>
+      );
+    case "status":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">status</span>{" "}
+          <span className="text-foreground">{ev.status}</span>
+          {ev.message ? (
+            <span className="text-muted-foreground"> · {ev.message}</span>
+          ) : null}
+        </div>
+      );
+    case "task":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+        >
+          <span className="text-primary">task</span>
+          {ev.status ? (
+            <span className="text-foreground"> {ev.status}</span>
+          ) : null}
+          {ev.text ? (
+            <pre className="text-muted-foreground mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap break-all">
+              {ev.text}
+            </pre>
+          ) : null}
+        </div>
+      );
+    case "error":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="border-destructive/40 rounded border bg-destructive/10 px-2 py-1 font-mono text-[0.65rem]"
+        >
+          <span className="text-destructive">error</span>{" "}
+          <span className="text-foreground">{ev.message}</span>
+        </div>
+      );
+    case "done":
+      return (
+        <div
+          data-testid="dev-mode-agent-event"
+          className="text-muted-foreground font-mono text-[0.65rem]"
+        >
+          <span className="text-primary">done</span> {ev.runStatus}
+        </div>
+      );
+    default: {
+      const _exhaustive: never = ev;
+      void _exhaustive;
+      return null;
+    }
+  }
+}
+
+function DevModeAgentTurnCard({ turn }: { turn: AgentTurn }) {
+  const view = useMemo(() => summarizeTurn(turn), [turn]);
+  const [rawDetailsOpen, setRawDetailsOpen] = useState(false);
+
+  const progressLabel = useMemo(
+    () => streamingProgressLabel(turn.events),
+    [turn.events]
+  );
+
+  const doneFooter =
+    turn.status === "done" && !view.errorMessage ? (
+      view.runStatus || view.toolCallCount > 0 ? (
+        <p className="text-muted-foreground mt-2 text-[0.65rem]">
+          {view.runStatus ? (
+            <>
+              <span className="capitalize">{view.runStatus}</span>
+              {view.toolCallCount > 0 ? (
+                <>
+                  {" "}
+                  · {view.toolCallCount}{" "}
+                  {view.toolCallCount === 1 ? "tool" : "tools"} used
+                </>
+              ) : null}
+            </>
+          ) : (
+            <>
+              {view.toolCallCount}{" "}
+              {view.toolCallCount === 1 ? "tool" : "tools"} used
+            </>
+          )}
+        </p>
+      ) : null
+    ) : null;
+
+  return (
+    <div className="border-border/60 bg-background/30 space-y-1.5 rounded-lg border p-2">
+      <div className="text-muted-foreground text-[0.6rem] font-semibold uppercase">
+        You
+      </div>
+      <p className="text-foreground text-xs break-words">{turn.prompt}</p>
+
+      {turn.status === "streaming" ? (
+        <div
+          data-testid="dev-mode-agent-progress"
+          className="border-border/40 bg-card-02/40 flex items-center gap-2 rounded border px-2 py-2 dark:bg-card-01/30"
+        >
+          <Loader2
+            aria-hidden
+            className="text-primary size-4 shrink-0 animate-spin"
+          />
+          <span className="text-foreground text-xs">{progressLabel}</span>
+        </div>
+      ) : null}
+
+      {turn.status === "error" && view.errorMessage ? (
+        <div
+          data-testid="dev-mode-agent-error"
+          className="border-destructive/40 rounded border bg-destructive/10 px-2 py-2 text-sm"
+        >
+          <span className="text-destructive font-medium">Error</span>
+          <p className="text-foreground mt-1 text-xs break-words">
+            {view.errorMessage}
+          </p>
+        </div>
+      ) : null}
+
+      {turn.status !== "streaming" && turn.status !== "error" ? (
+        <div className="space-y-1">
+          <div className="text-muted-foreground text-[0.6rem] font-semibold uppercase">
+            Agent
+          </div>
+          <div className="border-border/40 bg-card-02/50 rounded border px-2.5 py-2 dark:bg-card-01/40">
+            <p
+              data-testid="dev-mode-agent-answer"
+              className="text-foreground whitespace-pre-wrap break-words text-sm leading-relaxed"
+            >
+              {view.assistantText.trim().length > 0
+                ? view.assistantText
+                : "—"}
+            </p>
+            {doneFooter}
+          </div>
+        </div>
+      ) : null}
+
+      {turn.events.length > 0 ? (
+        <details
+          data-testid="dev-mode-agent-turn-details"
+          open={rawDetailsOpen}
+          onToggle={(e) => {
+            setRawDetailsOpen(e.currentTarget.open);
+          }}
+          className="group text-xs"
+        >
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            {turn.status === "streaming" ? "Raw stream events" : "Details"}
+          </summary>
+          {rawDetailsOpen ? (
+            <div className="mt-1.5 space-y-1">
+              {turn.events.map((ev, i) => (
+                <DevModeAgentEventRow
+                  key={`${turn.id}-ev-${i}`}
+                  ev={ev}
+                />
+              ))}
+            </div>
+          ) : null}
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+function DevModeAgentPromptPanel() {
+  const { agentId, agentStatus } = useDevMode();
+  const [turns, setTurns] = useState<AgentTurn[]>([]);
+  const [prompt, setPrompt] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
+
+  const streaming = useMemo(
+    () => turns.some((t) => t.status === "streaming"),
+    [turns]
+  );
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  const applyEventToTurn = useCallback(
+    (turnId: string, ev: AgentStreamEvent) => {
+      setTurns((prev) =>
+        prev.map((t) => {
+          if (t.id !== turnId) {
+            return t;
+          }
+          const nextEvents = [...t.events, ev];
+          let nextStatus = t.status;
+          if (ev.type === "done") {
+            nextStatus = "done";
+          }
+          if (ev.type === "error") {
+            nextStatus = "error";
+          }
+          return { ...t, events: nextEvents, status: nextStatus };
+        })
+      );
+    },
+    []
+  );
+
+  const onCancel = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const runSend = useCallback(
+    async (turnId: string, text: string) => {
+      if (!agentId) {
+        return;
+      }
+      const ac = new AbortController();
+      abortRef.current = ac;
+
+      try {
+        const res = await fetch("/api/dev-mode/agent/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentId, prompt: text }),
+          signal: ac.signal,
+        });
+
+        if (!res.ok) {
+          const errBody = (await res.json().catch(() => ({}))) as {
+            error?: unknown;
+          };
+          const msg =
+            typeof errBody.error === "string"
+              ? errBody.error
+              : `HTTP ${res.status}`;
+          applyEventToTurn(turnId, { type: "error", message: msg });
+          return;
+        }
+
+        const reader = res.body?.getReader();
+        if (!reader) {
+          applyEventToTurn(turnId, {
+            type: "error",
+            message: "No response body",
+          });
+          return;
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (line.trim().length === 0) {
+              continue;
+            }
+            const ev = parseAgentStreamLine(line);
+            if (ev) {
+              applyEventToTurn(turnId, ev);
+            }
+          }
+        }
+
+        if (buffer.trim().length > 0) {
+          const ev = parseAgentStreamLine(buffer);
+          if (ev) {
+            applyEventToTurn(turnId, ev);
+          }
+        }
+      } catch (err) {
+        const isAbort =
+          err instanceof DOMException
+            ? err.name === "AbortError"
+            : err instanceof Error && err.name === "AbortError";
+        if (isAbort) {
+          applyEventToTurn(turnId, { type: "error", message: "Cancelled" });
+          return;
+        }
+        const message = err instanceof Error ? err.message : String(err);
+        applyEventToTurn(turnId, { type: "error", message });
+      } finally {
+        if (abortRef.current === ac) {
+          abortRef.current = null;
+        }
+        setTurns((prev) =>
+          prev.map((t) =>
+            t.id === turnId && t.status === "streaming"
+              ? { ...t, status: "done" }
+              : t
+          )
+        );
+      }
+    },
+    [agentId, applyEventToTurn]
+  );
+
+  const onSubmit = useCallback(
+    (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const text = prompt.trim();
+      if (
+        !agentId ||
+        text.length === 0 ||
+        streaming ||
+        agentStatus !== "connected"
+      ) {
+        return;
+      }
+      const turnId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `turn-${Date.now()}`;
+      setTurns((prev) => [
+        ...prev,
+        { id: turnId, prompt: text, events: [], status: "streaming" },
+      ]);
+      setPrompt("");
+      void runSend(turnId, text);
+    },
+    [agentId, agentStatus, prompt, runSend, streaming]
+  );
+
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        (
+          e.currentTarget.form as HTMLFormElement | null
+        )?.requestSubmit();
+      }
+    },
+    []
+  );
+
+  const submitDisabled =
+    !agentId ||
+    prompt.trim().length === 0 ||
+    streaming ||
+    agentStatus !== "connected";
+
+  return (
+    <div
+      data-testid="dev-mode-agent-form"
+      className="flex min-h-0 flex-1 flex-col gap-2 p-2"
+    >
+      <p className="text-muted-foreground text-[0.65rem] font-semibold tracking-wide uppercase">
+        Cloud agent
+      </p>
+      <form onSubmit={onSubmit} className="flex shrink-0 flex-col gap-2">
+        <textarea
+          data-testid="dev-mode-agent-prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={onKeyDown}
+          rows={3}
+          placeholder={
+            agentStatus === "connected"
+              ? "Prompt the agent…"
+              : agentStatus === "connecting"
+                ? "Connecting…"
+                : "Agent unavailable"
+          }
+          disabled={agentStatus !== "connected"}
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-none rounded-md border px-2 py-1.5 text-xs shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={submitDisabled}
+            data-testid="dev-mode-agent-submit"
+          >
+            Send
+          </Button>
+          {streaming ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="dev-mode-agent-cancel"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          ) : null}
+        </div>
+      </form>
+
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-0.5">
+        {[...turns].reverse().map((turn) => (
+          <DevModeAgentTurnCard key={turn.id} turn={turn} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function MetadataSection({
   title,
@@ -322,10 +974,12 @@ function DevModeRightRail() {
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
-          className="border-border/60 shrink-0 border-b"
+          className="border-border/60 flex min-h-0 flex-[1.2] flex-col overflow-hidden border-b"
           data-testid="dev-mode-rail-primary-slot"
           aria-label="Dev tools"
-        />
+        >
+          <DevModeAgentPromptPanel />
+        </div>
 
         {selected != null ? (
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
