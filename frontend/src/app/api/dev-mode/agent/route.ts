@@ -252,7 +252,7 @@ export async function GET() {
     const extras = await Promise.all(
       slice.map((info) => enrichLatestRun(apiKey, info.agentId))
     );
-    const agents: Array<
+    const listedAgents: Array<
       SDKAgentInfo & {
         latestRun?: LatestRunPayload;
         detailError?: string;
@@ -267,7 +267,7 @@ export async function GET() {
     });
 
     return Response.json({
-      agents,
+      agents: listedAgents,
       nextCursor: result.nextCursor,
     });
   } catch (err) {

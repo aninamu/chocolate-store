@@ -1423,7 +1423,7 @@ function DevModeRightRail() {
             id="dev-mode-tabpanel-agent"
             aria-labelledby="dev-mode-tab-agent"
             hidden={railTab !== "agent"}
-            className="min-h-0 flex-1 flex-col overflow-hidden"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
             <DevModeAgentPromptPanel onPromptTerminal={onPromptTerminal} />
           </div>
@@ -1432,7 +1432,7 @@ function DevModeRightRail() {
             id="dev-mode-tabpanel-history"
             aria-labelledby="dev-mode-tab-history"
             hidden={railTab !== "history"}
-            className="min-h-0 flex-1 flex-col overflow-hidden"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
             <DevModeAgentHistoryPanel
               preload={railTab === "history"}
