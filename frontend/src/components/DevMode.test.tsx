@@ -92,6 +92,7 @@ describe("DevMode", () => {
     expect(
       screen.getByRole("switch", { name: "Dev mode on" })
     ).toBeInTheDocument();
+    expect(screen.getByTestId("dev-mode-rail")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -101,7 +102,7 @@ describe("DevMode", () => {
     });
   });
 
-  it("with dev mode on, click selects an element and opens the sidebar with metadata", async () => {
+  it("with dev mode on, selecting an element shows a collapsed inspector in the rail", async () => {
     const user = userEvent.setup();
     render(
       <TestRoot>
@@ -113,21 +114,31 @@ describe("DevMode", () => {
 
     await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
 
+    const rail = screen.getByTestId("dev-mode-rail");
+    expect(rail).toBeInTheDocument();
+    expect(screen.getByTestId("dev-mode-rail-primary-slot")).toBeInTheDocument();
+
     const p = within(screen.getByTestId("host")).getByText("target text");
     await user.click(p);
 
-    expect(screen.getByText("Element")).toBeInTheDocument();
-    const panel = screen.getByRole("dialog");
-    expect(within(panel).getByText("Tag & identity")).toBeInTheDocument();
-    expect(panel.textContent).toMatch(/<p>/);
-    expect(panel.textContent).toContain("pick");
+    const details = screen.getByTestId("dev-mode-element-details");
+    expect(details).not.toHaveAttribute("open");
+    expect(within(rail).getByText("#pick")).toBeInTheDocument();
+    expect(within(rail).getByText(/p#pick\.prose/)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("dev-mode-element-details-summary"));
+    expect(details).toHaveAttribute("open");
+    expect(within(rail).getByText("Tag & identity")).toBeInTheDocument();
+    expect(rail.textContent).toMatch(/<p>/);
+    expect(rail.textContent).toContain("pick");
     expect(
-      within(panel).getByText("prose", { selector: "p.text-muted-foreground" })
+      within(rail).getByText("prose", { selector: "p.text-muted-foreground" })
     ).toBeInTheDocument();
-    expect(within(panel).getByText("data-foo")).toBeInTheDocument();
+    expect(within(rail).getByText("data-foo")).toBeInTheDocument();
 
     await user.click(screen.getByRole("switch", { name: "Dev mode on" }));
-    expect(screen.queryByText("Element")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dev-mode-rail")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dev-mode-element-details")).not.toBeInTheDocument();
     const toggles = screen.getAllByRole("switch", { name: "Dev mode off" });
     expect(toggles[0]).toHaveAttribute("aria-checked", "false");
 
