@@ -11,7 +11,7 @@ import {
   type TextBlock,
 } from "@cursor/sdk";
 
-import { agents } from "@/server/dev-mode-agents";
+import { agents as devModeAgents } from "@/server/dev-mode-agents";
 
 const HISTORY_LIST_LIMIT = 50;
 /** Bound N+1 enrichment to the listed agents (same cap as list). */
@@ -308,7 +308,7 @@ export async function POST() {
       },
     });
 
-    agents.set(agent.agentId, agent);
+    devModeAgents.set(agent.agentId, agent);
     return Response.json({ agentId: agent.agentId });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -337,10 +337,10 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "agentId is required" }, { status: 400 });
   }
 
-  const agent = agents.get(agentId);
+  const agent = devModeAgents.get(agentId);
   if (agent) {
     agent.close();
-    agents.delete(agentId);
+    devModeAgents.delete(agentId);
   }
 
   return new Response(null, { status: 204 });
