@@ -151,7 +151,7 @@ function TagMultiselectDropdown({
         disabled={loading || empty}
         className="h-9 w-full justify-between gap-2 px-3 font-normal hover:bg-background"
         aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-controls={`${triggerId}-panel`}
         onClick={() => {
           if (!loading && !empty) setOpen((v) => !v);
         }}
@@ -160,6 +160,7 @@ function TagMultiselectDropdown({
           {loading ? "Loading tags…" : empty ? "No tags" : summary}
         </span>
         <ChevronDown
+          aria-hidden
           className={cn(
             "size-4 shrink-0 opacity-50 transition-transform",
             open && "rotate-180"
@@ -168,8 +169,9 @@ function TagMultiselectDropdown({
       </Button>
       {open && !loading && !empty ? (
         <div
-          role="listbox"
-          aria-multiselectable
+          id={`${triggerId}-panel`}
+          role="group"
+          aria-labelledby={triggerId}
           className="absolute top-full z-50 mt-1 max-h-72 w-full min-w-[12rem] overflow-auto rounded-lg border border-border/80 bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
         >
           <div className="flex flex-col py-0.5">
@@ -226,15 +228,23 @@ function TagMultiselectDropdown({
   );
 }
 
+function parseInStockOnlyParam(sp: ReturnType<typeof useSearchParams>): boolean {
+  const v = sp.get("in_stock");
+  return v === "1" || v?.toLowerCase() === "true";
+}
+
 function ShopContent() {
   const tagTriggerId = useId();
+  const inStockId = useId();
   const router = useRouter();
   const sp = useSearchParams();
   const tagQ = sp.getAll("tag").map((s) => s.trim()).filter(Boolean);
   const sortQ = (sp.get("sort") as string) || "name";
+  const inStockQ = parseInStockOnlyParam(sp);
 
   const [selectedTags, setSelectedTags] = useState<string[]>(tagQ);
   const [sort, setSort] = useState(sortQ);
+  const [inStockOnly, setInStockOnly] = useState(inStockQ);
 
   useEffect(() => {
     setSelectedTags(
@@ -243,6 +253,7 @@ function ShopContent() {
         .filter(Boolean)
     );
     setSort((sp.get("sort") as string) || "name");
+    setInStockOnly(parseInStockOnlyParam(sp));
   }, [sp]);
 
   const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery({
@@ -267,13 +278,20 @@ function ShopContent() {
       }),
   });
 
+  const displayedChocolates = useMemo(() => {
+    if (!data) return undefined;
+    if (!inStockQ) return data;
+    return data.filter((c) => c.in_stock);
+  }, [data, inStockQ]);
+
   const onApply = useCallback(() => {
     const p = new URLSearchParams();
     for (const t of selectedTags) p.append("tag", t);
     if (sort) p.set("sort", sort);
+    if (inStockOnly) p.set("in_stock", "1");
     const qs = p.toString();
     router.push(qs ? `/shop?${qs}` : "/shop");
-  }, [selectedTags, sort, router]);
+  }, [selectedTags, sort, inStockOnly, router]);
 
   const toggleTag = useCallback((t: string) => {
     setSelectedTags((prev) =>
@@ -305,6 +323,18 @@ function ShopContent() {
             onClearAll={clearTags}
           />
         </div>
+        <div className="space-y-2 sm:shrink-0">
+          <Label htmlFor={inStockId}>In stock only</Label>
+          <div className="flex h-9 items-center rounded-lg border border-input bg-card/50 px-3 shadow-sm dark:bg-input/20">
+            <input
+              id={inStockId}
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => setInStockOnly(e.target.checked)}
+              className="size-3.5 shrink-0 rounded border border-input accent-primary"
+            />
+          </div>
+        </div>
         <div className="space-y-2 sm:w-48 sm:shrink-0">
           <Label htmlFor="sort">Sort</Label>
           <select
@@ -330,7 +360,7 @@ function ShopContent() {
         </Button>
       </div>
       {isError ? (
-        <p className="text-destructive">
+        <p role="alert" className="text-destructive">
           {(error as Error).message}{" "}
           <Button variant="link" onClick={() => void refetch()}>
             Retry
@@ -344,10 +374,10 @@ function ShopContent() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {data?.map((c) => <ChocolateCard key={c.id} chocolate={c} />)}
+          {displayedChocolates?.map((c) => <ChocolateCard key={c.id} chocolate={c} />)}
         </div>
       )}
-      {!isLoading && data?.length === 0 ? (
+      {!isLoading && displayedChocolates?.length === 0 ? (
         <p className="text-sm text-muted-foreground">No matches. Try a different tag.</p>
       ) : null}
     </div>

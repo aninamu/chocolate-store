@@ -88,6 +88,7 @@ export default function CartPage() {
                   className="h-9 w-20 rounded-lg border border-input bg-card/50 px-2 text-sm shadow-sm outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 dark:bg-input/20"
                   value={l.quantity}
                   onChange={(e) => setQty(l.chocolateId, Number(e.target.value) || 0)}
+                  aria-label={`Quantity for ${p.name}`}
                 />
                 <Button type="button" variant="ghost" onClick={() => removeFromCart(l.chocolateId)}>
                   Remove

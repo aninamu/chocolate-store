@@ -78,7 +78,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                         onChange={(e) =>
                           setQty(l.chocolateId, Number(e.target.value) || 0)
                         }
-                        aria-label="Quantity"
+                        aria-label={`Quantity for ${p?.name ?? "item"}`}
                       />
                       <Button
                         type="button"

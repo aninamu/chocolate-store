@@ -50,6 +50,8 @@ export function Header() {
             className="relative md:hidden"
             onClick={() => setMobile((v) => !v)}
             aria-label="Menu"
+            aria-expanded={mobile}
+            aria-controls="mobile-navigation"
           >
             <Menu className="size-4" />
           </Button>
@@ -70,7 +72,10 @@ export function Header() {
         </div>
       </div>
       {mobile ? (
-        <div className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20">
+        <div
+          id="mobile-navigation"
+          className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20"
+        >
           <div className="mx-auto flex max-w-6xl flex-col">
             {links.map((l) => (
               <Link

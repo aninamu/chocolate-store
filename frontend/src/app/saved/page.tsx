@@ -28,7 +28,7 @@ export default function SavedPage() {
         <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Saved for later</h1>
       </div>
       {isError ? (
-        <p className="text-destructive">
+        <p role="alert" className="text-destructive">
           {(error as Error).message}{" "}
           <Button variant="link" onClick={() => void refetch()}>
             Retry
@@ -42,7 +42,7 @@ export default function SavedPage() {
         </div>
       ) : list.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nothing saved yet. Open a product and tap the heart.
+          Nothing saved yet. Open a product and select the heart.
         </p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
