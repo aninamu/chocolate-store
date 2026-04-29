@@ -249,21 +249,22 @@ export async function GET() {
     });
 
     const slice = result.items.slice(0, HISTORY_ENRICH_LIMIT);
+    const extras = await Promise.all(
+      slice.map((info) => enrichLatestRun(apiKey, info.agentId))
+    );
     const agents: Array<
       SDKAgentInfo & {
         latestRun?: LatestRunPayload;
         detailError?: string;
       }
-    > = [];
-
-    for (const info of slice) {
-      const extra = await enrichLatestRun(apiKey, info.agentId);
-      agents.push({
+    > = slice.map((info, i) => {
+      const extra = extras[i]!;
+      return {
         ...info,
         ...(extra.latestRun != null ? { latestRun: extra.latestRun } : {}),
         ...(extra.detailError != null ? { detailError: extra.detailError } : {}),
-      });
-    }
+      };
+    });
 
     return Response.json({
       agents,
