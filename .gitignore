@@ -16,4 +16,6 @@ frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/
 .DS_Store
-.cursor/
+.cursor/*
+!.cursor/agents/
+!.cursor/agents/**
