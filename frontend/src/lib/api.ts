@@ -3,7 +3,6 @@ import type { CheckoutPayload, CheckoutResponse, Chocolate } from "@/lib/types";
 const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export async function fetchChocolates(params?: {
-  /** Multiple `tag` query params; API matches if the chocolate has any listed tag. */
   tags?: string[];
   sort?: string;
 }): Promise<Chocolate[]> {

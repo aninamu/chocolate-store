@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from redis.exceptions import RedisError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache import get_redis, close_redis
 from app.db import engine, AsyncSessionFactory
@@ -56,7 +55,6 @@ async def health() -> dict[str, str | bool]:
     redis_ok = False
     try:
         async with AsyncSessionFactory() as s:
-            s: AsyncSession
             await s.execute(text("SELECT 1"))
             db_ok = True
     except SQLAlchemyError as e:

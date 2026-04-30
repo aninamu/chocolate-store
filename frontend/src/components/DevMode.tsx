@@ -137,11 +137,16 @@ function DevModeSelectionOutline() {
   );
 }
 
-const DEV_MODE_RAIL_WIDTH_REM = 18; // w-72
+const DEV_MODE_RAIL_WIDTH_REM = 18;
+
+const AGENT_EVENT_ROW =
+  "border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30";
+
+const INSPECTOR_SURFACE =
+  "bg-card-02/80 dark:bg-card-01/50 rounded border p-2 text-xs";
 
 type DevModeRailTab = "agent" | "history";
 
-/** Shape returned by GET /api/dev-mode/agent (SDK cloud agent list entries). */
 type LatestRunInfo = {
   runId: string;
   status: string;
@@ -354,7 +359,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">assistant</span>
           <pre className="text-foreground mt-0.5 max-h-32 overflow-auto whitespace-pre-wrap break-all">
@@ -366,7 +371,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">system</span>
           <pre className="text-muted-foreground mt-0.5 max-h-24 overflow-auto text-[0.65rem] break-all whitespace-pre-wrap">
@@ -378,7 +383,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">thinking</span>
           <pre className="text-muted-foreground mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap break-all">
@@ -390,7 +395,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">tool_call</span>{" "}
           <span className="text-foreground">{ev.name}</span>{" "}
@@ -402,7 +407,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">status</span>{" "}
           <span className="text-foreground">{ev.status}</span>
@@ -415,7 +420,7 @@ function DevModeAgentEventRow({ ev }: { ev: AgentStreamEvent }) {
       return (
         <div
           data-testid="dev-mode-agent-event"
-          className="border-border/40 rounded border bg-card-02/40 px-2 py-1 font-mono text-[0.65rem] dark:bg-card-01/30"
+          className={AGENT_EVENT_ROW}
         >
           <span className="text-primary">task</span>
           {ev.status ? (
@@ -1005,6 +1010,20 @@ function DevModeAgentPromptPanel({
         const decoder = new TextDecoder();
         let buffer = "";
 
+        const handleStreamLine = (raw: string) => {
+          if (raw.trim().length === 0) {
+            return;
+          }
+          const ev = parseAgentStreamLine(raw);
+          if (!ev) {
+            return;
+          }
+          applyEventToTurn(turnId, ev);
+          if (ev.type === "done" || ev.type === "error") {
+            notifyTerminalOnce();
+          }
+        };
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
@@ -1014,28 +1033,11 @@ function DevModeAgentPromptPanel({
           const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
           for (const line of lines) {
-            if (line.trim().length === 0) {
-              continue;
-            }
-            const ev = parseAgentStreamLine(line);
-            if (ev) {
-              applyEventToTurn(turnId, ev);
-              if (ev.type === "done" || ev.type === "error") {
-                notifyTerminalOnce();
-              }
-            }
+            handleStreamLine(line);
           }
         }
 
-        if (buffer.trim().length > 0) {
-          const ev = parseAgentStreamLine(buffer);
-          if (ev) {
-            applyEventToTurn(turnId, ev);
-            if (ev.type === "done" || ev.type === "error") {
-              notifyTerminalOnce();
-            }
-          }
-        }
+        handleStreamLine(buffer);
 
         if (!terminalRefreshNotified) {
           notifyTerminalOnce();
@@ -1205,7 +1207,7 @@ function DevModeElementDetailsBody({ snapshot }: { snapshot: DevModeElementSnaps
       </MetadataSection>
 
       <MetadataSection title="Layout (getBoundingClientRect)">
-        <pre className="bg-card-02/80 dark:bg-card-01/50 overflow-x-auto rounded border p-2 text-xs">
+        <pre className={cn(INSPECTOR_SURFACE, "overflow-x-auto")}>
           {JSON.stringify(snapshot.rect, null, 2)}
         </pre>
       </MetadataSection>
@@ -1226,7 +1228,7 @@ function DevModeElementDetailsBody({ snapshot }: { snapshot: DevModeElementSnaps
       </MetadataSection>
 
       <MetadataSection title="Computed styles (subset)">
-        <pre className="bg-card-02/80 dark:bg-card-01/50 max-h-48 overflow-auto rounded border p-2 text-xs">
+        <pre className={cn(INSPECTOR_SURFACE, "max-h-48 overflow-auto")}>
           {Object.entries(snapshot.computed)
             .map(([k, v]) => `${k}: ${v}`)
             .join("\n")}
@@ -1242,7 +1244,12 @@ function DevModeElementDetailsBody({ snapshot }: { snapshot: DevModeElementSnaps
       )}
 
       <MetadataSection title="outerHTML (truncated)">
-        <pre className="bg-card-02/80 dark:bg-card-01/50 max-h-40 overflow-x-auto overflow-y-auto rounded border p-2 text-xs break-all whitespace-pre-wrap">
+        <pre
+          className={cn(
+            INSPECTOR_SURFACE,
+            "max-h-40 overflow-x-auto overflow-y-auto break-all whitespace-pre-wrap"
+          )}
+        >
           {snapshot.outerHTML}
         </pre>
       </MetadataSection>
@@ -1321,6 +1328,15 @@ function DevModeSelectedElementCollapsible({
   );
 }
 
+function railTabBtnClass(active: boolean) {
+  return cn(
+    "text-foreground/90 hover:bg-muted/40 flex min-h-10 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors",
+    active
+      ? "border-primary text-primary border-b-2 pb-[calc(0.5rem-2px)]"
+      : "text-muted-foreground border-b-2 border-transparent pb-2"
+  );
+}
+
 function DevModeRightRail() {
   const { enabled, selected, setSelected } = useDevMode();
   const [railTab, setRailTab] = useState<DevModeRailTab>("agent");
@@ -1389,12 +1405,7 @@ function DevModeRightRail() {
               aria-selected={railTab === "agent"}
               aria-controls="dev-mode-tabpanel-agent"
               data-testid="dev-mode-tab-agent"
-              className={cn(
-                "text-foreground/90 hover:bg-muted/40 flex min-h-10 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors",
-                railTab === "agent"
-                  ? "border-primary text-primary border-b-2 pb-[calc(0.5rem-2px)]"
-                  : "text-muted-foreground border-b-2 border-transparent pb-2"
-              )}
+              className={railTabBtnClass(railTab === "agent")}
               onClick={() => setRailTab("agent")}
             >
               Cloud agent
@@ -1406,12 +1417,7 @@ function DevModeRightRail() {
               aria-selected={railTab === "history"}
               aria-controls="dev-mode-tabpanel-history"
               data-testid="dev-mode-tab-history"
-              className={cn(
-                "text-foreground/90 hover:bg-muted/40 flex min-h-10 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors",
-                railTab === "history"
-                  ? "border-primary text-primary border-b-2 pb-[calc(0.5rem-2px)]"
-                  : "text-muted-foreground border-b-2 border-transparent pb-2"
-              )}
+              className={railTabBtnClass(railTab === "history")}
               onClick={() => setRailTab("history")}
             >
               History

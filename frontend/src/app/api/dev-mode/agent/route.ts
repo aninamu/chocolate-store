@@ -14,7 +14,6 @@ import {
 import { agents as devModeAgents } from "@/server/dev-mode-agents";
 
 const HISTORY_LIST_LIMIT = 50;
-/** Bound N+1 enrichment to the listed agents (same cap as list). */
 const HISTORY_ENRICH_LIMIT = 50;
 const MAX_STREAM_MESSAGES = 48;
 const MAX_PREVIEW_LINES = 20;
