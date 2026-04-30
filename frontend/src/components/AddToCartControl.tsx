@@ -1,7 +1,6 @@
 "use client";
 
 import { Minus, Plus, ShoppingCart } from "lucide-react";
-import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useShop } from "@/context/shop-state";
@@ -15,7 +14,6 @@ type Props = {
   productName: string;
   inStock: boolean;
   isReady: boolean;
-  /** Card grid: compact Add + stepper. Detail page: large CTA. */
   size: "sm" | "lg";
   className?: string;
 };
@@ -29,11 +27,8 @@ export function AddToCartControl({
   className,
 }: Props) {
   const { cart, addToCart, setQty } = useShop();
-
-  const qty = useMemo(
-    () => cart.find((l) => l.chocolateId === chocolateId)?.quantity ?? 0,
-    [cart, chocolateId]
-  );
+  const qty =
+    cart.find((l) => l.chocolateId === chocolateId)?.quantity ?? 0;
 
   const addDisabled = !inStock || !isReady;
   const canIncrement = qty < MAX_QTY;

@@ -21,7 +21,6 @@ router = APIRouter()
 
 
 def _normalize_sort_key(sort: str | None) -> str:
-    """Match query behavior: unknown sort values fall back to name ordering."""
     s = sort or "name"
     if s in ("price_asc", "price_desc", "cacao_desc", "name"):
         return s
@@ -42,11 +41,11 @@ def _detail_cache_key(cid: UUID) -> str:
 async def list_chocolates(
     tag: list[str] = Query(
         default_factory=list,
-        description="Filter: chocolate must include at least one listed tag (repeat query param, exact match; OR semantics).",
+        description="Repeat `tag=`; OR semantics: chocolate must include at least one listed tag.",
     ),
     sort: str | None = Query(
         "name",
-        description="Sort: name, price_asc, price_desc, cacao_desc",
+        description="name | price_asc | price_desc | cacao_desc",
     ),
     session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:

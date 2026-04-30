@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
-import { ShopProvider } from "@/context/shop-state";
+import { DevMode } from "@/components/DevMode";
 import { Toaster } from "@/components/ui/sonner";
+import { DevModeProvider } from "@/context/dev-mode";
+import { ShopProvider } from "@/context/shop-state";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -23,8 +25,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={client}>
         <ShopProvider>
-          {children}
-          <Toaster position="top-center" richColors closeButton />
+          <DevModeProvider>
+            {children}
+            <DevMode />
+            <Toaster position="top-center" richColors closeButton />
+          </DevModeProvider>
         </ShopProvider>
       </QueryClientProvider>
     </ThemeProvider>
