@@ -127,7 +127,7 @@ function TagMultiselectDropdown({
   }, [open]);
 
   const summary = useMemo(() => {
-    if (selectedTags.length === 0) return "Any tag";
+    if (selectedTags.length === 0) return "All flavors";
     if (selectedTags.length === 1) return selectedTags[0];
     if (selectedTags.length === 2) {
       return `${selectedTags[0]}, ${selectedTags[1]}`;
@@ -155,7 +155,7 @@ function TagMultiselectDropdown({
         }}
       >
         <span className="min-w-0 truncate text-left">
-          {isPending ? "Loading tags…" : empty ? "No tags" : summary}
+          {isPending ? "Loading filters…" : empty ? "No filters yet" : summary}
         </span>
         <ChevronDown
           className={cn(
@@ -214,7 +214,7 @@ function TagMultiselectDropdown({
                   onClearAll();
                 }}
               >
-                Clear tags
+                Clear filters
               </button>
             </div>
           ) : null}
@@ -293,7 +293,7 @@ function ShopContent() {
       </div>
       <div className="mb-6 flex flex-col gap-4 rounded-xl border border-border/70 bg-gradient-to-b from-card/90 to-muted/30 p-4 shadow-sm sm:flex-row sm:items-end sm:gap-4 dark:from-card/80 dark:to-muted/20">
         <div className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor={tagTriggerId}>Tags</Label>
+          <Label htmlFor={tagTriggerId}>Flavors &amp; filters</Label>
           <TagMultiselectDropdown
             triggerId={tagTriggerId}
             tagOptions={tagOptions}
@@ -324,7 +324,7 @@ function ShopContent() {
           className="h-9 shrink-0 px-4 sm:self-end"
           onClick={onApply}
         >
-          Apply
+          Show results
         </Button>
       </div>
       {isError ? (
@@ -346,7 +346,9 @@ function ShopContent() {
         </div>
       )}
       {!isLoading && data?.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No matches. Try a different tag.</p>
+        <p className="text-sm text-muted-foreground">
+          No products match those filters. Try clearing a filter or choosing a different combination.
+        </p>
       ) : null}
     </div>
   );

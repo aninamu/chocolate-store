@@ -1470,6 +1470,10 @@ function DevModeRightRail() {
 function DevModeToggle() {
   const { enabled, setEnabled, agentStatus } = useDevMode();
 
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
   return (
     <div
       className="fixed bottom-4 right-4 z-[60] flex flex-col items-center gap-1.5 rounded-2xl border border-border/40 bg-card/40 px-4 py-3 shadow-lg backdrop-blur-md supports-backdrop-filter:bg-card/30 max-md:hidden"
@@ -1479,7 +1483,7 @@ function DevModeToggle() {
         htmlFor="dev-mode-switch"
         className="cursor-pointer select-none text-xs text-muted-foreground/70"
       >
-        Dev mode {enabled ? "on" : "off"}
+        Developer tools {enabled ? "on" : "off"}
       </label>
       {enabled ? (
         <span

@@ -75,7 +75,7 @@ export default function ProductDetailPage() {
             ? c.cacao_percentage === 0
               ? "No cacao (white or spread)"
               : `${c.cacao_percentage}% cacao`
-            : "Cacao n/a"}
+            : "Cacao not listed"}
         </p>
         <p className="mt-4 font-heading text-2xl font-semibold tabular-nums">{formatPrice(c.price_cents)}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">

@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "chocolate store",
-  description: "Field-engineer friendly demo: browse, save, cart, and mock checkout.",
+  title: "Chocolate Store — craft chocolate delivered",
+  description:
+    "Small-batch bars and truffles from trusted origins. Shop by flavor, save favorites, and checkout in a few steps.",
 };
 
 export default function RootLayout({

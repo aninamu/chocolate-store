@@ -166,13 +166,13 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    const toggle = screen.getByRole("switch", { name: "Dev mode off" });
+    const toggle = screen.getByRole("switch", { name: "Developer tools off" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
 
     await user.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(
-      screen.getByRole("switch", { name: "Dev mode on" })
+      screen.getByRole("switch", { name: "Developer tools on" })
     ).toBeInTheDocument();
     expect(screen.getByTestId("dev-mode-rail")).toBeInTheDocument();
 
@@ -192,7 +192,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -290,7 +290,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -349,7 +349,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     expect(screen.getByTestId("dev-mode-agent-submit")).toBeDisabled();
 
@@ -399,7 +399,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -420,7 +420,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     const rail = screen.getByTestId("dev-mode-rail");
     expect(rail).toBeInTheDocument();
@@ -444,10 +444,10 @@ describe("DevMode", () => {
     ).toBeInTheDocument();
     expect(within(rail).getByText("data-foo")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode on" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools on" }));
     expect(screen.queryByTestId("dev-mode-rail")).not.toBeInTheDocument();
     expect(screen.queryByTestId("dev-mode-element-details")).not.toBeInTheDocument();
-    const toggles = screen.getAllByRole("switch", { name: "Dev mode off" });
+    const toggles = screen.getAllByRole("switch", { name: "Developer tools off" });
     expect(toggles[0]).toHaveAttribute("aria-checked", "false");
 
     await waitFor(() => {
@@ -469,7 +469,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -519,7 +519,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -603,7 +603,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(
@@ -654,7 +654,7 @@ describe("DevMode", () => {
       </TestRoot>
     );
 
-    await user.click(screen.getByRole("switch", { name: "Dev mode off" }));
+    await user.click(screen.getByRole("switch", { name: "Developer tools off" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("dev-mode-agent-status")).toHaveTextContent(

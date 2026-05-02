@@ -41,9 +41,9 @@ export default function CartPage() {
 
   return (
     <div>
-      <h1 className="mb-2 font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Cart</h1>
+      <h1 className="mb-2 font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Your cart</h1>
       <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Totals are recomputed on the server at checkout; prices always come from the API.
+        Review your items. Shipping and tax are calculated at checkout.
       </p>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading product details…</p>
@@ -54,7 +54,7 @@ export default function CartPage() {
           if (!p) {
             return (
               <li key={l.chocolateId} className="flex items-center justify-between p-4">
-                <span className="text-sm">Unknown product</span>
+                <span className="text-sm text-muted-foreground">This item is no longer available.</span>
                 <Button type="button" variant="link" onClick={() => removeFromCart(l.chocolateId)}>
                   Remove
                 </Button>

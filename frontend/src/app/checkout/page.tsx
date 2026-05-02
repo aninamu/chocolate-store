@@ -44,7 +44,7 @@ export default function CheckoutPage() {
   });
 
   if (!isReady) {
-    return <p className="text-sm text-muted-foreground">Preparing…</p>;
+    return <p className="text-sm text-muted-foreground">Loading your cart…</p>;
   }
 
   if (cart.length === 0) {

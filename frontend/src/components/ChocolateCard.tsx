@@ -46,7 +46,7 @@ export function ChocolateCard({ chocolate: c }: Props) {
             {c.name}
           </Link>
           <p className="text-sm text-muted-foreground">
-            {c.origin ?? "—"}
+            {c.origin ?? "Origin varies by batch"}
             {c.cacao_percentage != null && c.cacao_percentage > 0
               ? ` · ${c.cacao_percentage}%`
               : c.cacao_percentage === 0

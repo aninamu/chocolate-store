@@ -20,17 +20,13 @@ function SuccessInner() {
       <div className="mb-6 inline-flex size-12 items-center justify-center rounded-full bg-primary/15 text-primary shadow-sm ring-1 ring-primary/20 dark:bg-primary/25">
         <PartyPopper className="size-6" aria-hidden />
       </div>
-      <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Order placed</h1>
+      <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Thank you for your order</h1>
       <p className="mt-3 leading-relaxed text-muted-foreground">
-        Your mock order is in the database. You can query it with{" "}
-        <code className="rounded-md border border-border/60 bg-muted/80 px-1.5 py-0.5 text-sm font-medium text-foreground dark:bg-muted/50">
-          make psql
-        </code>{" "}
-        from the repo root.
+        We&apos;ve received your order and will send a confirmation email shortly with the details below.
       </p>
       {orderId ? (
         <p className="mt-4 text-sm">
-          Order id:{" "}
+          Order number:{" "}
           <code className="rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-xs dark:bg-muted/40">
             {orderId}
           </code>
