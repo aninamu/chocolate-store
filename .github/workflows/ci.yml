@@ -1,5 +1,9 @@
 name: ci
 
+# Cursor Bugbot and Cursor security review are not defined here. They run via
+# Cursor's GitHub App and product settings (repo enabled in dashboard, triggers,
+# plan limits)—not as jobs in this workflow. Green CI does not imply Bugbot ran.
+
 on:
   pull_request:
     branches: [main]
