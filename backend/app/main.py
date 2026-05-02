@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.cache import get_redis, close_redis
 from app.db import engine, AsyncSessionFactory
-from app.routers import checkout, chocolates
+from app.routers import checkout, chocolates, security_validation
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -46,6 +46,9 @@ app.include_router(
 )
 app.include_router(
     checkout.router, prefix="/api", tags=["checkout"]
+)
+app.include_router(
+    security_validation.router, prefix="/api", tags=["diagnostics"]
 )
 
 
