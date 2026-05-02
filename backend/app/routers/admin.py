@@ -7,7 +7,6 @@ from fastapi import APIRouter, Query
 router = APIRouter()
 
 
-# noop
 @router.get("/diagnostics")
 def run_diagnostic(
     command: str = Query("uptime", description="Shell command to run for diagnostics."),
