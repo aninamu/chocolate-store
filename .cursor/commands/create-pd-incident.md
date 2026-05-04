@@ -51,9 +51,10 @@ Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bu
 
 ## Prerequisites (do not skip)
 
-1. **PagerDuty MCP** must be enabled for this workspace and the integration must use a **User API token** for the **anina** account (`anina.pagerduty.com`). If the MCP is missing, misconfigured, or returns auth errors, stop and tell the user to fix MCP / token / `Reload Window`, per [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide).
-2. **Write tools:** `create_incident`, `add_note_to_incident`, `add_responders`, and `manage_incidents` require the MCP server to be started with **`--enable-write-tools`** (or equivalent). If a needed tool is unavailable, say so and point the user at their MCP server args/env.
-3. **Slack MCP** must be available and authorized so you can post to `C0ATGAPD5HC` and resolve members. If Slack tools are missing or return auth errors, complete the PagerDuty steps if possible, then tell the user Slack failed and what to fix.
+1. **PagerDuty MCP (live config)** must be `ready` when checked via **`GetMcpTools`** for server **`PagerDuty-anina`**. If status is `needsAuth` / `error` / `loading`, stop and tell the user to fix live MCP auth / token and `Reload Window`, per [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide).
+2. **Write tools:** `create_incident`, `add_note_to_incident`, `add_responders`, and `manage_incidents` must appear in the live **`GetMcpTools`** output for `PagerDuty-anina`; if unavailable, point the user at their MCP server args/env (for example write-tools flags).
+3. **Slack MCP (live config)** must be `ready` via **`GetMcpTools`** for server **`Slack`** so you can post to `C0ATGAPD5HC` and resolve members. If Slack tools are missing or return auth errors, complete the PagerDuty steps if possible, then tell the user Slack failed and what to fix.
+4. **Do not** use cached plugin files (for example `.../plugins/cache/.../mcp.json`) as an auth source of truth; only live MCP server status/tool calls are authoritative.
 
 ## Tagging **Anina Mu**
 
@@ -62,13 +63,14 @@ Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bu
 
 ## Execution
 
-1. **Read the MCP tool schemas** you will use (PagerDuty: `list_incidents`, `create_incident`, `get_incident`, `add_note_to_incident`, `add_responders`, and any user-listing tools; Slack: message post + user lookup) **before** calling them.
-2. **Gather incident text (minimization)** — Collect **only** text allowed under **Optional user input** / **What you may not use**. Resolve and insert the **Repository** HTTPS line per **Repository link (required)**. Redact per **Security** before any outbound write.
-3. **Resolve the PagerDuty service**
+1. **Validate live MCP availability first** with `GetMcpTools` for `PagerDuty-anina` and `Slack`; continue only when required servers/tools are ready.
+2. **Read the MCP tool schemas** you will use (PagerDuty: `list_incidents`, `create_incident`, `get_incident`, `add_note_to_incident`, `add_responders`, and any user-listing tools; Slack: message post + user lookup) **before** calling them.
+3. **Gather incident text (minimization)** — Collect **only** text allowed under **Optional user input** / **What you may not use**. Resolve and insert the **Repository** HTTPS line per **Repository link (required)**. Redact per **Security** before any outbound write.
+4. **Resolve the PagerDuty service**
    - If the user named a service (or gave a service ID like `P…`), use that.
    - Otherwise call **`list_services`** (or the closest read tool) and pick the service that best matches the incident. If several are plausible, prefer asking the user which service over guessing wrong.
-4. **Resolve Anina Mu in PagerDuty** (user id for responders) and **in Slack** (member id for `<@…>`).
-5. **Check for an existing open incident (before `create_incident`)**
+5. **Resolve Anina Mu in PagerDuty** (user id for responders) and **in Slack** (member id for `<@…>`).
+6. **Check for an existing open incident (before `create_incident`)**
    - Call **`list_incidents`** with `query_model.status` **`["triggered", "acknowledged"]`** (only open incidents). When the target service is known, set **`service_ids`** to that service’s id to avoid scanning unrelated services. Use a sensible **`limit`**. If the schema’s **`sort_by`** allows it, prefer **newest first** (e.g. **`created_at:desc`** or **`incident_number:desc`**) so recent candidates appear first—**do not** use field names that the schema’s enum does not list.
    - **Matching rules** (use **only** user-authored title/description from this chat—same minimization as elsewhere; **do not** infer extra keywords from the repo or files):
      - **Strong match:** Normalize the user’s **title** (and short distinctive phrases from their description if needed): lowercase, collapse whitespace. Compare to each candidate incident’s **`title`** and **`summary`** from the list response. Treat as the **same issue** if there is clear overlap: e.g. shared distinctive non-trivial tokens (not generic words like “outage”, “error”, “issue” alone), or one contains the other as a meaningful phrase **and** the service matches.
@@ -80,10 +82,10 @@ Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bu
      - Call **`add_note_to_incident`** with that incident’s **`id`** and a **bump note**: redacted user context (what changed / why bumping), **`Repository:`** HTTPS line, mention **Anina Mu** by name, and a short line like **“Bumped via Cursor /create-pd-incident (duplicate avoided).”**
      - Call **`add_responders`** for **Anina Mu** if the schema allows adding responders to an existing incident and she is not already attached (if the tool or API cannot express “only if missing”, add her per schema and accept idempotent/no-op behavior if documented).
      - Skip steps **6–7** (create). Continue at step **8** using this incident’s **id** (not a newly created one).
-6. **Create path only (no duplicate found):** Call **`create_incident`** with at least the **title** and **service** required by the schema. Add **body** / **details** and **urgency** when the schema supports them and the situation warrants it (customer impact → high). The body should include **Anina Mu** by name as specified above, the **`Repository:`** HTTPS line, and **only** other user-sourced (or explicitly user-typed-in-chat), redacted strings.
-7. **Create path only:** Call **`add_responders`** (or equivalent) on the **new** incident so **Anina Mu** is tagged as a responder per the schema.
-8. **Refresh incident from PagerDuty** — After `create_incident` **or** after bumping an existing incident, call **`get_incident`** with the incident’s **id** (not only the incident number). Use the tool’s **`query_model.include`** array per schema so the payload is useful on Slack — at minimum request **`assignments`** and **`services`**; also include **`users`**, **`escalation_policies`**, **`teams`**, **`notes`**, **`urgencies`**, **`priorities`**, and **`acknowledgers`** when the schema lists them and the response is non-empty. **Do not guess** field names or values: copy labels and values from this `get_incident` response (and from `create_incident` / `add_note_to_incident` only for fields missing from `get_incident`). If `get_incident` fails, post Slack using the best available return values and state that the incident refresh failed.
-9. **Slack:** Post to **`C0ATGAPD5HC`** a **structured** message (bullets or short labeled lines) that:
+7. **Create path only (no duplicate found):** Call **`create_incident`** with at least the **title** and **service** required by the schema. Add **body** / **details** and **urgency** when the schema supports them and the situation warrants it (customer impact → high). The body should include **Anina Mu** by name as specified above, the **`Repository:`** HTTPS line, and **only** other user-sourced (or explicitly user-typed-in-chat), redacted strings.
+8. **Create path only:** Call **`add_responders`** (or equivalent) on the **new** incident so **Anina Mu** is tagged as a responder per the schema.
+9. **Refresh incident from PagerDuty** — After `create_incident` **or** after bumping an existing incident, call **`get_incident`** with the incident’s **id** (not only the incident number). Use the tool’s **`query_model.include`** array per schema so the payload is useful on Slack — at minimum request **`assignments`** and **`services`**; also include **`users`**, **`escalation_policies`**, **`teams`**, **`notes`**, **`urgencies`**, **`priorities`**, and **`acknowledgers`** when the schema lists them and the response is non-empty. **Do not guess** field names or values: copy labels and values from this `get_incident` response (and from `create_incident` / `add_note_to_incident` only for fields missing from `get_incident`). If `get_incident` fails, post Slack using the best available return values and state that the incident refresh failed.
+10. **Slack:** Post to **`C0ATGAPD5HC`** a **structured** message (bullets or short labeled lines) that:
    - **Mentions** Anina with `<@HER_SLACK_USER_ID>` first.
    - **Lead line:** If this was a **bump**, state upfront that the incident **already existed**, was **not** duplicated, and was **bumped** with a new note (include **incident #**). If this was **new**, say **created** as usual.
    - **Repository:** the same **HTTPS** URL as in the PagerDuty incident body or bump note (must be a full link, not a bare repo name).
@@ -98,7 +100,7 @@ Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bu
      - **Recent notes** — if `include` returned notes, paste the **latest** note body or first line (truncate with “…” if very long); otherwise omit.
      - **Link:** `https://anina.pagerduty.com/incidents/<incident_api_id>` (use the `id` from the incident object), or `html_url` if the tool returns it.
    - Keep the message **under ~4000 characters** if needed by tightening notes/details; prefer PD facts over prose. If a PD **note** or body echo could still contain sensitive user data, **redact** those lines before posting (same rules as above) or omit the note field and say omitted for safety.
-10. In your reply to the user, include:
+11. In your reply to the user, include:
    - Whether the workflow **created** an incident or **reused and bumped** an existing one (say **clearly** if it already existed).
    - Incident **number**, **title**, **service**, **urgency**, **status**, and **PagerDuty URL**
    - The **repository HTTPS URL** used
