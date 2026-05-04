@@ -12,14 +12,40 @@ Use the Slack API / MCP with **channel id `C0ATGAPD5HC`** (Slack MCP parameter i
 
 ## Optional user input
 
-The user may paste text after invoking this command. Treat that text as the primary source for:
+The user may paste text after invoking this command. Treat that text as the **primary** source for:
 
 - **Title** — one short line (what is wrong / what needs attention).
 - **Description** — richer context (symptoms, scope, links, recent changes, reproduction).
 
-If **no** extra text was supplied, infer a meaningful title and description from **current chat context**: the problem being debugged, failing checks, error messages, branch or PR name, repository, and any open or recently viewed files. State briefly in the description that the incident was opened from Cursor and what context you used.
+### What you may **not** use for incident text (minimization)
 
-If you still cannot determine a sensible scope, **ask one clarifying question** (what broke / which service) before creating the incident.
+Do **not** pull incident title or body from: open or recently viewed **files**, workspace-wide search, **git** history or diffs, **terminals**, environment variables, MCP resources, or any editor or IDE state **unless** that exact text was **copied into this chat by the user** (paste or quote).
+
+You **may** use: (1) text the user supplied with the command or in **this thread** as the incident narrative, and (2) **non-sensitive** metadata they explicitly name in chat (e.g. a **full repo URL** pasted in chat, public branch name, CI job name) **only** if they typed it here—do not read it from disk or tooling for prose.
+
+**Exception (repository URL only):** To satisfy **Repository link (required)** below, you may read **only** `git remote get-url origin` (or one equivalent remote) and normalize it to a **public HTTPS** clone URL for a single `Repository:` line. Do **not** use git commands for any other incident text.
+
+If there is **not** enough user-authored text in chat for a safe title and description, **stop** and ask them to paste a short title and description. Do **not** invent or infer operational details from the workspace to fill gaps.
+
+## Repository link (required)
+
+Every incident **body/details** must include a dedicated line with a **clickable HTTPS URL** to the code repository, not a bare name:
+
+- Use the format **`Repository: https://…`** (markdown link in Slack is fine: `Repository: <https://…>`).
+
+**How to resolve the URL (in order):**
+
+1. If the user pasted a full **https://** repo URL in chat, use that (after redaction if needed).
+2. Else use the **Exception** under *What you may not use*: read `git remote get-url origin`, strip credentials if present, and normalize SSH forms (e.g. `git@github.com:org/repo.git`) to **`https://github.com/org/repo`** (same idea for GitLab/Bitbucket hosts).
+3. If the remote is missing, private without a safe public URL, or you cannot normalize confidently, **stop** and ask the user to paste the canonical **HTTPS** repo link before creating the incident.
+
+Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bullet or line) so responders can open the repo from Slack without opening PagerDuty.
+
+## Security: redaction (required)
+
+**Redaction (before send):** On every string that will go to PagerDuty or Slack, remove or replace with `[REDACTED]`: API tokens and keys, passwords, private keys, cookies, `Authorization` / `Bearer` values, database connection strings, long opaque secrets (e.g. base64 blobs), webhook URLs with embedded secrets, and **full stack traces** (replace with one neutral line, e.g. “Application error during checkout,” without paths or line numbers). Truncate or generalize **internal-only URLs** hosts unless the user explicitly asked to include them. If heavy redaction would hide the incident meaning, ask the user for a **sanitized** rewrite instead of guessing.
+
+**No confirmation gate:** After redaction and resolving service/users, call `create_incident`, `add_responders`, and `slack_send_message` without waiting for a separate user approval step. You may still briefly summarize what you sent in your reply (title, service, urgency, links).
 
 ## Prerequisites (do not skip)
 
@@ -35,17 +61,19 @@ If you still cannot determine a sensible scope, **ask one clarifying question** 
 ## Execution
 
 1. **Read the MCP tool schemas** you will use (PagerDuty: `create_incident`, `get_incident`, `add_responders`, and any user-listing tools; Slack: message post + user lookup) **before** calling them.
-2. **Resolve the PagerDuty service**
+2. **Gather incident text (minimization)** — Collect **only** text allowed under **Optional user input** / **What you may not use**. Resolve and insert the **Repository** HTTPS line per **Repository link (required)**. Redact per **Security** before any outbound write.
+3. **Resolve the PagerDuty service**
    - If the user named a service (or gave a service ID like `P…`), use that.
    - Otherwise call **`list_services`** (or the closest read tool) and pick the service that best matches the incident. If several are plausible, prefer asking the user which service over guessing wrong.
-3. **Resolve Anina Mu in PagerDuty** (user id for responders) and **in Slack** (member id for `<@…>`).
-4. Call **`create_incident`** with at least the **title** and **service** required by the schema. Add **body** / **details** and **urgency** when the schema supports them and the situation warrants it (customer impact → high). The body should include **Anina Mu** by name as specified above.
-5. Call **`add_responders`** (or equivalent) on the new incident so **Anina Mu** is tagged as a responder per the schema.
-6. **Refresh incident from PagerDuty** — After `create_incident` (and `add_responders` if used), call **`get_incident`** with the new incident’s **id** (not only the incident number). Use the tool’s **`query_model.include`** array per schema so the payload is useful on Slack — at minimum request **`assignments`** and **`services`**; also include **`users`**, **`escalation_policies`**, **`teams`**, **`notes`**, **`urgencies`**, **`priorities`**, and **`acknowledgers`** when the schema lists them and the response is non-empty. **Do not guess** field names or values: copy labels and values from this `get_incident` response (and from `create_incident` only for fields missing from `get_incident`). If `get_incident` fails, post Slack using **`create_incident`** return values only and state that the incident refresh failed.
-7. **Slack:** Post to **`C0ATGAPD5HC`** a **structured** message (bullets or short labeled lines) that:
+4. **Resolve Anina Mu in PagerDuty** (user id for responders) and **in Slack** (member id for `<@…>`).
+5. Call **`create_incident`** with at least the **title** and **service** required by the schema. Add **body** / **details** and **urgency** when the schema supports them and the situation warrants it (customer impact → high). The body should include **Anina Mu** by name as specified above, the **`Repository:`** HTTPS line, and **only** other user-sourced (or explicitly user-typed-in-chat), redacted strings.
+6. Call **`add_responders`** (or equivalent) on the new incident so **Anina Mu** is tagged as a responder per the schema.
+7. **Refresh incident from PagerDuty** — After `create_incident` (and `add_responders` if used), call **`get_incident`** with the new incident’s **id** (not only the incident number). Use the tool’s **`query_model.include`** array per schema so the payload is useful on Slack — at minimum request **`assignments`** and **`services`**; also include **`users`**, **`escalation_policies`**, **`teams`**, **`notes`**, **`urgencies`**, **`priorities`**, and **`acknowledgers`** when the schema lists them and the response is non-empty. **Do not guess** field names or values: copy labels and values from this `get_incident` response (and from `create_incident` only for fields missing from `get_incident`). If `get_incident` fails, post Slack using **`create_incident`** return values only and state that the incident refresh failed.
+8. **Slack:** Post to **`C0ATGAPD5HC`** a **structured** message (bullets or short labeled lines) that:
    - **Mentions** Anina with `<@HER_SLACK_USER_ID>` first.
+   - **Repository:** the same **HTTPS** URL as in the PagerDuty incident body (must be a full link, not a bare repo name).
    - **PagerDuty block** — Populate directly from **`get_incident`** (and `create_incident` only to fill gaps). Include as many of these as the API returns, with exact values:
-     - **Title** and **one-line summary** of user impact (from incident title + your context; PD `summary` if present).
+     - **Title** from the incident record and PD **`summary`** if present—**no** extra workspace-inferred narrative.
      - **Incident #** (`incident_number`), **API id** (`id`), **status**, **urgency** / **priority** (if returned).
      - **Service:** name or `summary` and **service id**.
      - **Timestamps:** `created_at`, `updated_at` (and `resolved_at` if set) — keep ISO or convert to a clear timezone; state which you used once.
@@ -54,9 +82,10 @@ If you still cannot determine a sensible scope, **ask one clarifying question** 
      - **Acknowledgers** if any.
      - **Recent notes** — if `include` returned notes, paste the **latest** note body or first line (truncate with “…” if very long); otherwise omit.
      - **Link:** `https://anina.pagerduty.com/incidents/<incident_api_id>` (use the `id` from the incident object), or `html_url` if the tool returns it.
-   - Keep the message **under ~4000 characters** if needed by tightening notes/details; prefer PD facts over prose.
-8. In your reply to the user, include:
+   - Keep the message **under ~4000 characters** if needed by tightening notes/details; prefer PD facts over prose. If a PD **note** or body echo could still contain sensitive user data, **redact** those lines before posting (same rules as above) or omit the note field and say omitted for safety.
+9. In your reply to the user, include:
    - Incident **number**, **title**, **service**, **urgency**, and **PagerDuty URL**
+   - The **repository HTTPS URL** included in the incident
    - Confirmation that **Anina Mu** was added as a **responder** (or what failed)
    - That Slack was posted to **C0ATGAPD5HC**, with a **permalink** to the message if the tool returns it
 
@@ -64,3 +93,4 @@ If you still cannot determine a sensible scope, **ask one clarifying question** 
 
 - Do not invent API payloads; follow the tool schemas returned by the MCPs.
 - Never print or request API tokens.
+- Never bypass **redaction** rules to save time.
