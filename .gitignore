@@ -22,3 +22,12 @@ frontend/coverage/
 .cursor/commands/*
 !.cursor/commands/create-pd-incident.md
 !.cursor/commands/get-pd-incidents.md
+# PagerDuty workspace skills (override bundled plugin-cache setup paths)
+!.cursor/skills/
+.cursor/skills/*
+!.cursor/skills/pagerduty-mcp-anina-setup/
+.cursor/skills/pagerduty-mcp-anina-setup/*
+!.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md
+!.cursor/skills/pagerduty-anina-workflows/
+.cursor/skills/pagerduty-anina-workflows/*
+!.cursor/skills/pagerduty-anina-workflows/SKILL.md

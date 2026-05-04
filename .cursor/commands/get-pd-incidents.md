@@ -1,5 +1,7 @@
 # Get open PagerDuty incidents (anina)
 
+**Setup / MCP config:** For token and “where is mcp.json” guidance, read the workspace skill **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** — do **not** follow bundled `pagerduty-mcp-setup` skills that read `mcp.json` under **`.cursor/plugins/cache`** (stale template paths).
+
 Fetch **open** (not resolved) incidents from the PagerDuty account behind [https://anina.pagerduty.com/](https://anina.pagerduty.com/) using the **PagerDuty MCP** (`list_incidents` is a **read** tool). Produce a **concise summary** for the user in this thread, then **post the same summary** to the fixed Slack channel below.
 
 ## Slack destination (fixed)

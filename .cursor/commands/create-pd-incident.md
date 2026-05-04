@@ -1,5 +1,7 @@
 # Create PagerDuty incident (anina)
 
+**Setup / MCP config:** For token and “where is mcp.json” guidance, read the workspace skill **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** — do **not** follow bundled `pagerduty-mcp-setup` skills that read `mcp.json` under **`.cursor/plugins/cache`** (stale template paths).
+
 Create a **triggered** incident in the PagerDuty account used by [https://anina.pagerduty.com/](https://anina.pagerduty.com/) (API access is via the configured **PagerDuty MCP**; the subdomain is where humans open the incident in the web UI). Then **notify Slack** and ensure **Anina Mu** is tagged in **both** places.
 
 **Deduplication:** If an **open** incident (**`triggered`** or **`acknowledged`**) already covers **the same issue** the user is describing, **do not** call `create_incident`. **Bump** that incident instead (`add_note_to_incident` per schema), then refresh status with `get_incident`, notify Slack, and tell the user clearly that the incident **already existed** and was bumped—not duplicated.
