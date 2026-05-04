@@ -5,19 +5,21 @@ description: PagerDuty MCP setup for this workspace (anina). Prefer this over bu
 
 # PagerDuty MCP (anina) — workspace setup
 
+## Live MCP configuration (use these only)
+
+**The live config is whatever Cursor loads for MCP servers** — not any file under the plugin install or skill cache.
+
+1. **Cursor UI (primary):** **Settings → MCP** (or **Cursor Settings → Features → MCP** depending on version). This is where users enable **PagerDuty-anina** (or the named server), edit URLs/headers, and authenticate. Prefer telling the user to open **Settings → MCP** when something is wrong.
+2. **User-level JSON on disk (typical):** **`~/.cursor/mcp.json`** — Cursor commonly persists global MCP server definitions here (including `headers.Authorization` for PagerDuty). This is a **live** file for the user’s machine; it is **not** under **`~/.cursor/plugins/cache/`**.
+3. **Workspace-level JSON (optional):** **`<repository-root>/.cursor/mcp.json`** — only if your team added a project-scoped MCP override. Check whether this file exists before assuming; many workspaces have **no** project `mcp.json`.
+
+When quoting “their” MCP JSON in chat, you may read **`~/.cursor/mcp.json`** or **this workspace’s `.cursor/mcp.json`** if it exists — never plugin cache paths below.
+
 ## Do not read plugin cache for MCP config
 
-Some bundled **`pagerduty-mcp-setup`** skills instruct the agent to open **`mcp.json`** in a path **relative to the skill file** (e.g. two directories above `SKILL.md` under **`.cursor/plugins/cache/...`**). That file is a **template or install artifact**, not the MCP configuration Cursor uses at runtime.
+Some bundled **`pagerduty-mcp-setup`** skills point at **`mcp.json`** **next to the skill** under **`.cursor/plugins/cache/...`**. That is a **plugin/template artifact**, not the live MCP config Cursor runs.
 
-**Do not** use `Read`, repo search, or terminal paths under **`**/plugins/cache/**`** or **`**/.cursor/plugins/**`** to verify or quote PagerDuty MCP configuration.
-
-## Where configuration actually lives
-
-1. **Cursor UI:** **Settings → MCP** (wording may vary by Cursor version). The user enables the server and stores secrets there.
-2. **User-level file (common):** `~/.cursor/mcp.json` — many setups define the PagerDuty server and the `Authorization` header here.
-3. **This repo (only if present):** `.cursor/mcp.json` at the workspace root, if your team added a project override.
-
-When telling the user what to edit, prefer **Settings → MCP** and the official guide: [PagerDuty MCP server integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide). If you reference a JSON file, use **`~/.cursor/mcp.json`** or this repo’s **`.cursor/mcp.json`** — never a path under the plugin cache.
+**Do not** use `Read`, search, or shell against **`**/plugins/cache/**`** or **`**/.cursor/plugins/**`** to diagnose or display MCP configuration.
 
 ## Token and auth failures
 

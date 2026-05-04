@@ -1,6 +1,6 @@
 # Create PagerDuty incident (anina)
 
-**Setup / MCP config:** For token and “where is mcp.json” guidance, read the workspace skill **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** — do **not** follow bundled `pagerduty-mcp-setup` skills that read `mcp.json` under **`.cursor/plugins/cache`** (stale template paths).
+**Setup / MCP config:** **Live:** **Settings → MCP** in Cursor, and on disk typically **`~/.cursor/mcp.json`** (user) or **`.cursor/mcp.json`** at this repo root if present — **not** anything under **`.cursor/plugins/cache`**. Full guidance: **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`**.
 
 Create a **triggered** incident in the PagerDuty account used by [https://anina.pagerduty.com/](https://anina.pagerduty.com/) (API access is via the configured **PagerDuty MCP**; the subdomain is where humans open the incident in the web UI). Then **notify Slack** and ensure **Anina Mu** is tagged in **both** places.
 
@@ -53,7 +53,7 @@ Repeat the same **`Repository:`** HTTPS URL in the **Slack** message (its own bu
 
 ## Prerequisites (do not skip)
 
-1. **PagerDuty MCP** must be enabled for this workspace and the integration must use a **User API token** for the **anina** account (`anina.pagerduty.com`). If the MCP is missing, misconfigured, or returns auth errors, stop and tell the user to fix MCP / token / `Reload Window`, per [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide).
+1. **PagerDuty MCP** must be enabled for this workspace and the integration must use a **User API token** for the **anina** account (`anina.pagerduty.com`). If the MCP is missing, misconfigured, or returns auth errors, stop and tell the user to fix it in **Settings → MCP** and/or **`~/.cursor/mcp.json`** (or this repo’s **`.cursor/mcp.json`** if used), then **Reload Window**; see [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide). Do **not** point at plugin-cache `mcp.json` paths.
 2. **Write tools:** `create_incident`, `add_note_to_incident`, `add_responders`, and `manage_incidents` require the MCP server to be started with **`--enable-write-tools`** (or equivalent). If a needed tool is unavailable, say so and point the user at their MCP server args/env.
 3. **Slack MCP** must be available and authorized so you can post to `C0ATGAPD5HC` and resolve members. If Slack tools are missing or return auth errors, complete the PagerDuty steps if possible, then tell the user Slack failed and what to fix.
 

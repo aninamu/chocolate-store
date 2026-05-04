@@ -1,6 +1,6 @@
 # Get open PagerDuty incidents (anina)
 
-**Setup / MCP config:** For token and “where is mcp.json” guidance, read the workspace skill **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** — do **not** follow bundled `pagerduty-mcp-setup` skills that read `mcp.json` under **`.cursor/plugins/cache`** (stale template paths).
+**Setup / MCP config:** **Live:** **Settings → MCP** in Cursor, and on disk typically **`~/.cursor/mcp.json`** (user) or **`.cursor/mcp.json`** at this repo root if present — **not** anything under **`.cursor/plugins/cache`**. Full guidance: **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`**.
 
 Fetch **open** (not resolved) incidents from the PagerDuty account behind [https://anina.pagerduty.com/](https://anina.pagerduty.com/) using the **PagerDuty MCP** (`list_incidents` is a **read** tool). Produce a **concise summary** for the user in this thread, then **post the same summary** to the fixed Slack channel below.
 
@@ -53,7 +53,7 @@ If there are **too many** incidents to list verbosely in Slack:
 
 ## Prerequisites
 
-1. **PagerDuty MCP** must be enabled with a valid **User API token** for the anina account. On auth/config failure, stop and point the user at the [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide) and **Reload Window** after fixing `mcp.json`.
+1. **PagerDuty MCP** must be enabled with a valid **User API token** for the anina account. On auth/config failure, stop and tell the user to fix it in **Settings → MCP** and/or **`~/.cursor/mcp.json`** (or this repo’s **`.cursor/mcp.json`** if used), then **Reload Window**; use the [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide). Do **not** point at plugin-cache `mcp.json` paths.
 2. **Slack MCP** must be able to post to **`C0ATGAPD5HC`**. If Slack fails after a successful PD fetch, still return the **PagerDuty summary** in chat and explain the Slack error.
 
 ## Execution order

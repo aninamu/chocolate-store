@@ -14,4 +14,4 @@ Use these **workspace** command definitions (paths relative to repository root):
 
 Do not substitute older copies from Cursor plugin cache directories.
 
-For MCP token and server configuration (not these procedures), read **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** in this repo (skill id `pagerduty-mcp-anina-setup`).
+For MCP token and **live** config locations (**Settings → MCP**, **`~/.cursor/mcp.json`**, workspace **`.cursor/mcp.json`**), read **`.cursor/skills/pagerduty-mcp-anina-setup/SKILL.md`** (skill id `pagerduty-mcp-anina-setup`).
