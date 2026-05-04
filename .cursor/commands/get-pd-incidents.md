@@ -51,8 +51,9 @@ If there are **too many** incidents to list verbosely in Slack:
 
 ## Prerequisites
 
-1. **PagerDuty MCP** must be enabled with a valid **User API token** for the anina account. On auth/config failure, stop and point the user at the [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide) and **Reload Window** after fixing `mcp.json`.
-2. **Slack MCP** must be able to post to **`C0ATGAPD5HC`**. If Slack fails after a successful PD fetch, still return the **PagerDuty summary** in chat and explain the Slack error.
+1. **PagerDuty MCP (live config)** must be `ready` when checked via **`GetMcpTools`** for server **`PagerDuty-anina`**. If status is `needsAuth` / `error` / `loading`, stop and point the user at the [PagerDuty MCP integration guide](https://support.pagerduty.com/main/docs/pagerduty-mcp-server-integration-guide), then ask them to re-auth/reload Cursor (`Reload Window`).
+2. **Slack MCP (live config)** must be `ready` via **`GetMcpTools`** for server **`Slack`** and able to post to **`C0ATGAPD5HC`**. If Slack fails after a successful PD fetch, still return the **PagerDuty summary** in chat and explain the Slack error.
+3. **Do not** use cached plugin files (for example `.../plugins/cache/.../mcp.json`) as an auth source of truth; only live MCP server status/tool calls are authoritative.
 
 ## Execution order
 
