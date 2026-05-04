@@ -16,4 +16,8 @@ frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/
 .DS_Store
-.cursor/
+# Ignore local Cursor project state; allow selected commands to be versioned.
+.cursor/*
+!.cursor/commands/
+.cursor/commands/*
+!.cursor/commands/create-pd-incident.md
