@@ -21,22 +21,27 @@ export function Header() {
   const count = cart.reduce((a, b) => a + b.quantity, 0);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-card/85 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-card/70 dark:border-border dark:bg-card/80 dark:supports-[backdrop-filter]:bg-card/65">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-card/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-card/90 dark:border-border/80 dark:bg-card/90 dark:supports-[backdrop-filter]:bg-card/85">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 font-mono">
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
         >
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest text-primary dark:bg-primary/20">
-            Est. 2024
+          <span className="rounded-sm border border-primary/45 bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary dark:bg-primary/25">
+            [EST. 2024]
           </span>
-          <span className="text-lg font-semibold tracking-tight">Chocolate Store</span>
+          <span className="text-lg font-semibold tracking-tight text-foreground/95">
+            <span className="text-primary">{">"}</span> CHOCOLATE_STORE
+          </span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
             <Link
               key={l.href}
-              className={buttonVariants({ variant: "ghost" })}
+              className={buttonVariants({
+                variant: "ghost",
+                className: "font-mono text-xs tracking-widest uppercase",
+              })}
               href={l.href}
             >
               {l.label}
@@ -47,7 +52,7 @@ export function Header() {
           <Button
             type="button"
             variant="outline"
-            className="relative md:hidden"
+            className="relative md:hidden border-primary/30 bg-card/80 hover:bg-primary/10"
             onClick={() => setMobile((v) => !v)}
             aria-label="Menu"
           >
@@ -56,7 +61,7 @@ export function Header() {
           <Button
             type="button"
             variant="secondary"
-            className="relative"
+            className="relative border border-primary/30 bg-card/80 hover:bg-primary/10"
             onClick={() => setCartOpen(true)}
             aria-label="Open cart"
           >
@@ -70,12 +75,15 @@ export function Header() {
         </div>
       </div>
       {mobile ? (
-        <div className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20">
+        <div className="border-t border-border/60 bg-muted/25 px-4 py-2 md:hidden dark:bg-muted/20">
           <div className="mx-auto flex max-w-6xl flex-col">
             {links.map((l) => (
               <Link
                 key={l.href}
-                className={buttonVariants({ variant: "ghost", className: "justify-start" })}
+                className={buttonVariants({
+                  variant: "ghost",
+                  className: "justify-start font-mono text-xs tracking-widest uppercase",
+                })}
                 href={l.href}
                 onClick={() => setMobile(false)}
               >
