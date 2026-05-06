@@ -142,3 +142,64 @@
     @apply font-sans;
   }
 }
+
+/* Homepage-only: classic CRT terminal (scoped tokens for readability in light + dark app theme) */
+.home-terminal-bg {
+  isolation: isolate;
+  --background: oklch(0.11 0.028 155);
+  --foreground: oklch(0.9 0.11 145);
+  --card: oklch(0.16 0.038 152);
+  --card-foreground: oklch(0.92 0.1 145);
+  --popover: oklch(0.14 0.03 155);
+  --popover-foreground: oklch(0.9 0.11 145);
+  --primary: oklch(0.72 0.19 145);
+  --primary-foreground: oklch(0.12 0.04 155);
+  --secondary: oklch(0.2 0.04 150);
+  --secondary-foreground: oklch(0.88 0.09 145);
+  --muted: oklch(0.2 0.035 152);
+  --muted-foreground: oklch(0.68 0.09 145);
+  --accent: oklch(0.22 0.05 148);
+  --accent-foreground: oklch(0.93 0.1 142);
+  --destructive: oklch(0.58 0.2 25);
+  --border: oklch(0.55 0.12 145 / 32%);
+  --input: oklch(0.55 0.1 145 / 28%);
+  --ring: oklch(0.62 0.16 145);
+  color: var(--foreground);
+  background-color: oklch(0.09 0.025 158);
+  background-image:
+    radial-gradient(
+      ellipse 130% 55% at 50% -15%,
+      oklch(0.38 0.14 145 / 28%),
+      transparent 58%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      oklch(0 0 0 / 0%) 0px,
+      oklch(0 0 0 / 0%) 2px,
+      oklch(0 0 0 / 18%) 2px,
+      oklch(0 0 0 / 18%) 3px
+    ),
+    linear-gradient(180deg, oklch(0 0 0 / 0%) 0%, oklch(0 0 0 / 55%) 100%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-size: 100% 100%, 100% 3px, 100% 100%;
+}
+
+.home-terminal-bg::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.4;
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.5 0.1 145 / 5%) 1px,
+    transparent 1px
+  );
+  background-size: 20px 100%;
+}
+
+.home-terminal-bg > * {
+  position: relative;
+  z-index: 1;
+}

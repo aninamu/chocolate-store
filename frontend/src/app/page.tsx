@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { fetchChocolates } from "@/lib/api";
 import { ChocolateCard } from "@/components/ChocolateCard";
@@ -16,8 +17,33 @@ export default function HomePage() {
   });
   const featured = data?.slice(0, 4) ?? [];
 
+  useEffect(() => {
+    // #region agent log H7
+    fetch("http://127.0.0.1:7350/ingest/37f73b68-7782-4cd7-81bf-7ce4f361283b", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "597800",
+      },
+      body: JSON.stringify({
+        sessionId: "597800",
+        runId: "initial",
+        hypothesisId: "H7",
+        location: "src/app/page.tsx:HomePage",
+        message: "Home page hydrated on client",
+        data: {
+          featuredCount: featured.length,
+          isLoading,
+          isError,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [featured.length, isError, isLoading]);
+
   return (
-    <div>
+    <div className="home-terminal-bg relative -mx-4 -my-10 px-4 py-10 sm:-mx-5 sm:px-5">
       <section className="relative mb-12 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-accent/30 p-8 shadow-md ring-1 ring-black/[0.04] dark:from-card dark:via-card dark:to-primary/10 dark:ring-white/[0.06] sm:p-10">
         <div
           className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/10 blur-3xl dark:bg-primary/20"
