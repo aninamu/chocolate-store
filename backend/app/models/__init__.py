@@ -1,3 +1,1 @@
-from app.models.chocolate import Chocolate, Order, OrderItem
-
-__all__ = ("Chocolate", "Order", "OrderItem")
+"""Domain documents live in MongoDB collections; no ORM models in this package."""

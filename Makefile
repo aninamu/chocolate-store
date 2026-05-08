@@ -1,6 +1,6 @@
 ROOT := $(abspath .)
 
-.PHONY: dev setup services-up services-down stop nuke psql redis-cli nuke-confirm \
+.PHONY: dev setup services-up services-down stop nuke mongosh redis-cli nuke-confirm \
 	test test-coverage test-backend test-backend-coverage test-frontend test-frontend-coverage
 
 # Full stack: bootstrap → data stores → app servers (stops all on Ctrl-C)
@@ -10,7 +10,7 @@ dev:
 	@./scripts/services-up.sh
 	@exec ./scripts/dev.sh
 
-# One-time or repeated setup (venv, npm, .env, initdb dir)
+# One-time or repeated setup (venv, npm, .env, MongoDB data dir)
 setup:
 	@chmod +x $(ROOT)/scripts/*.sh
 	@./scripts/bootstrap.sh
@@ -33,10 +33,9 @@ nuke-confirm:
 nuke:
 	@echo "Run 'make nuke-confirm' to delete ./.data/ and free ports."
 
-psql:
+mongosh:
 	@set -a && [ -f .env ] && . ./.env && set +a && \
-		. ./scripts/postgres-path.sh && add_postgres_bin_to_path; \
-		psql -h 127.0.0.1 -p "$$PG_PORT" -U "$$PG_USER" -d "$$PG_DB"
+		mongosh "$${MONGODB_URL%/}/$${MONGO_DB}"
 
 redis-cli:
 	@set -a && [ -f .env ] && . ./.env && set +a && \

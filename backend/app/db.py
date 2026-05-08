@@ -2,25 +2,33 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.config import settings
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=False,
-    pool_pre_ping=True,
-)
-
-AsyncSessionFactory = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
+_client: AsyncIOMotorClient | None = None
 
 
-async def get_db() -> AsyncIterator[AsyncSession]:
-    async with AsyncSessionFactory() as session:
-        yield session
+def get_client() -> AsyncIOMotorClient:
+    global _client
+    if _client is None:
+        _client = AsyncIOMotorClient(
+            settings.mongodb_url,
+            serverSelectionTimeoutMS=5000,
+        )
+    return _client
+
+
+def get_database() -> AsyncIOMotorDatabase:
+    return get_client()[settings.mongo_db]
+
+
+async def get_db() -> AsyncIterator[AsyncIOMotorDatabase]:
+    yield get_database()
+
+
+def close_mongo_client() -> None:
+    global _client
+    if _client is not None:
+        _client.close()
+        _client = None

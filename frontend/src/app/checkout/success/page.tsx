@@ -22,11 +22,19 @@ function SuccessInner() {
       </div>
       <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Order placed</h1>
       <p className="mt-3 leading-relaxed text-muted-foreground">
-        Your mock order is in the database. You can query it with{" "}
+        Your mock order is stored in MongoDB. With{" "}
         <code className="rounded-md border border-border/60 bg-muted/80 px-1.5 py-0.5 text-sm font-medium text-foreground dark:bg-muted/50">
-          make psql
+          mongosh
         </code>{" "}
-        from the repo root.
+        installed, run{" "}
+        <code className="rounded-md border border-border/60 bg-muted/80 px-1.5 py-0.5 text-sm font-medium text-foreground dark:bg-muted/50">
+          make mongosh
+        </code>{" "}
+        from the repo root, then e.g.{" "}
+        <code className="rounded-md border border-border/60 bg-muted/80 px-1.5 py-0.5 text-sm font-medium text-foreground dark:bg-muted/50">
+          db.orders.find()
+        </code>
+        .
       </p>
       {orderId ? (
         <p className="mt-4 text-sm">
