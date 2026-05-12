@@ -16,8 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "chocolate store",
-  description: "Field-engineer friendly demo: browse, save, cart, and mock checkout.",
+  title: {
+    default: "Chocolate Store",
+    template: "%s · Chocolate Store",
+  },
+  description:
+    "Field-engineer friendly demo: browse, save, cart, and mock checkout.",
 };
 
 export default function RootLayout({

@@ -42,7 +42,7 @@ export default function SavedPage() {
         </div>
       ) : list.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nothing saved yet. Open a product and tap the heart.
+          Nothing saved yet. Open a product and use the heart button to save it for later.
         </p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

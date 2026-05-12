@@ -43,7 +43,7 @@ export default function HomePage() {
               className={buttonVariants({ size: "lg", className: "min-h-10 px-5" })}
               href="/shop"
             >
-              Shop <ArrowRight className="ml-1 size-4" />
+              Shop <ArrowRight className="ml-1 size-4" aria-hidden />
             </Link>
           </div>
         </div>

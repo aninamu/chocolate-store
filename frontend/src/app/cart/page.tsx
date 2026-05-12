@@ -55,7 +55,12 @@ export default function CartPage() {
             return (
               <li key={l.chocolateId} className="flex items-center justify-between p-4">
                 <span className="text-sm">Unknown product</span>
-                <Button type="button" variant="link" onClick={() => removeFromCart(l.chocolateId)}>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => removeFromCart(l.chocolateId)}
+                  aria-label="Remove unknown product from cart"
+                >
                   Remove
                 </Button>
               </li>
@@ -80,7 +85,7 @@ export default function CartPage() {
                   {formatPrice(p.price_cents)} each
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                 <input
                   type="number"
                   min={0}
@@ -88,8 +93,14 @@ export default function CartPage() {
                   className="h-9 w-20 rounded-lg border border-input bg-card/50 px-2 text-sm shadow-sm outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 dark:bg-input/20"
                   value={l.quantity}
                   onChange={(e) => setQty(l.chocolateId, Number(e.target.value) || 0)}
+                  aria-label={`Quantity for ${p.name}`}
                 />
-                <Button type="button" variant="ghost" onClick={() => removeFromCart(l.chocolateId)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => removeFromCart(l.chocolateId)}
+                  aria-label={`Remove ${p.name} from cart`}
+                >
                   Remove
                 </Button>
               </div>

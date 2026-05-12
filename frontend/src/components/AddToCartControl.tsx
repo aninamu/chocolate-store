@@ -48,7 +48,7 @@ export function AddToCartControl({
           });
         }}
       >
-        <ShoppingCart className="size-4" />
+        <ShoppingCart className="size-4" aria-hidden />
         <span className={size === "sm" ? "ml-1.5" : "ml-2"}>
           {size === "sm" ? "Add" : "Add to cart"}
         </span>
@@ -82,7 +82,7 @@ export function AddToCartControl({
         disabled={!isReady}
         onClick={() => setQty(chocolateId, qty - 1)}
       >
-        <Minus className="size-4" />
+        <Minus className="size-4" aria-hidden />
       </Button>
       <span
         className={cn(
@@ -102,7 +102,7 @@ export function AddToCartControl({
         disabled={!isReady || !canIncrement}
         onClick={() => setQty(chocolateId, Math.min(MAX_QTY, qty + 1))}
       >
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden />
       </Button>
     </div>
   );

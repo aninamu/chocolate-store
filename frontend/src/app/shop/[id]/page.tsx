@@ -100,7 +100,7 @@ export default function ProductDetailPage() {
             variant={saved ? "default" : "outline"}
             onClick={() => toggleSaved(c.id)}
           >
-            <Heart className={`size-4 ${saved ? "fill-current" : ""}`} />
+            <Heart className={`size-4 ${saved ? "fill-current" : ""}`} aria-hidden />
             <span className="ml-2">{saved ? "Saved" : "Save for later"}</span>
           </Button>
         </div>

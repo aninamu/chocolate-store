@@ -8,7 +8,7 @@ import Link from "next/link";
 import { fetchChocolates } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { buttonVariants, Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useShop } from "@/context/shop-state";
 
 type Props = {
@@ -30,11 +30,20 @@ export function CartDrawer({ open, onOpenChange }: Props) {
     return p ? sum + p.price_cents * l.quantity : sum;
   }, 0);
 
+  const knownLineCount = cart.filter((l) => byId.has(l.chocolateId)).length;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full max-w-md flex-col gap-0 border-l border-border/70 bg-gradient-to-b from-popover via-popover to-muted/25 shadow-xl dark:to-muted/15 sm:max-w-md">
         <SheetHeader className="border-b border-border/50 bg-muted/20 pb-4 dark:bg-muted/10">
           <SheetTitle>Your cart</SheetTitle>
+          {cart.length === 0 ? null : (
+            <SheetDescription className="sr-only">
+              {isLoading || knownLineCount < cart.length
+                ? `Cart has ${cart.length} ${cart.length === 1 ? "entry" : "entries"}. Totals updating.`
+                : `${cart.length} ${cart.length === 1 ? "item" : "items"} in cart. Subtotal ${formatPrice(subtotal)}.`}
+            </SheetDescription>
+          )}
         </SheetHeader>
         <div className="flex-1 space-y-4 overflow-y-auto px-1 py-4">
           {isLoading && cart.length > 0 ? (
@@ -78,16 +87,22 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                         onChange={(e) =>
                           setQty(l.chocolateId, Number(e.target.value) || 0)
                         }
-                        aria-label="Quantity"
+                        aria-label={
+                          p?.name
+                            ? `Quantity for ${p.name}`
+                            : "Quantity for unavailable product"
+                        }
                       />
                       <Button
                         type="button"
                         size="icon"
                         variant="ghost"
                         onClick={() => removeFromCart(l.chocolateId)}
-                        aria-label="Remove"
+                        aria-label={
+                          p?.name ? `Remove ${p.name} from cart` : "Remove from cart"
+                        }
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-4" aria-hidden />
                       </Button>
                     </div>
                   </div>
@@ -112,7 +127,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                 className={buttonVariants({ className: "flex-1" })}
                 onClick={() => onOpenChange(false)}
               >
-                Checkout <ArrowRight className="ml-1 size-4" />
+                Checkout <ArrowRight className="ml-1 size-4" aria-hidden />
               </Link>
             </div>
             <Link

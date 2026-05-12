@@ -2,7 +2,8 @@
 
 import { Heart, Menu, Package, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useId, useState } from "react";
 
 import { buttonVariants, Button } from "@/components/ui/button";
 import { CartDrawer } from "@/components/CartDrawer";
@@ -14,10 +15,17 @@ const links = [
   { href: "/cart", label: "Cart" },
 ];
 
+function navCurrent(pathname: string, href: string): boolean {
+  if (href === "/shop") return pathname === "/shop" || pathname.startsWith("/shop/");
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Header() {
+  const pathname = usePathname() ?? "";
   const { cart } = useShop();
   const [cartOpen, setCartOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const mobileNavId = `${useId()}-mobile-nav`;
   const count = cart.reduce((a, b) => a + b.quantity, 0);
 
   return (
@@ -26,18 +34,20 @@ export function Header() {
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
+          aria-current={pathname === "/" ? "page" : undefined}
         >
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest text-primary dark:bg-primary/20">
             Est. 2024
           </span>
           <span className="text-lg font-semibold tracking-tight">Chocolate Store</span>
         </Link>
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Desktop navigation">
           {links.map((l) => (
             <Link
               key={l.href}
               className={buttonVariants({ variant: "ghost" })}
               href={l.href}
+              aria-current={navCurrent(pathname, l.href) ? "page" : undefined}
             >
               {l.label}
             </Link>
@@ -49,20 +59,26 @@ export function Header() {
             variant="outline"
             className="relative md:hidden"
             onClick={() => setMobile((v) => !v)}
-            aria-label="Menu"
+            aria-expanded={mobile}
+            aria-controls={mobileNavId}
+            aria-label={mobile ? "Close menu" : "Open menu"}
           >
-            <Menu className="size-4" />
+            <Menu className="size-4" aria-hidden />
           </Button>
           <Button
             type="button"
             variant="secondary"
             className="relative"
             onClick={() => setCartOpen(true)}
-            aria-label="Open cart"
+            aria-label={
+              count > 0
+                ? `Open cart, ${count > 9 ? "9+" : count} ${count === 1 ? "item" : "items"}`
+                : "Open cart"
+            }
           >
-            <ShoppingCart className="size-4" />
+            <ShoppingCart className="size-4" aria-hidden />
             {count > 0 ? (
-              <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+              <span aria-hidden className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                 {count > 9 ? "9+" : count}
               </span>
             ) : null}
@@ -70,20 +86,25 @@ export function Header() {
         </div>
       </div>
       {mobile ? (
-        <div className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20">
+        <nav
+          id={mobileNavId}
+          aria-label="Mobile"
+          className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20"
+        >
           <div className="mx-auto flex max-w-6xl flex-col">
             {links.map((l) => (
               <Link
                 key={l.href}
                 className={buttonVariants({ variant: "ghost", className: "justify-start" })}
                 href={l.href}
+                aria-current={navCurrent(pathname, l.href) ? "page" : undefined}
                 onClick={() => setMobile(false)}
               >
                 {l.label}
               </Link>
             ))}
           </div>
-        </div>
+        </nav>
       ) : null}
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </header>
@@ -96,7 +117,7 @@ export function HomeFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/60 dark:ring-border">
-            <Package className="size-4" />
+            <Package className="size-4" aria-hidden />
           </span>
           <span className="max-w-md leading-relaxed">
             Free shipping on orders over $50 · Ships within 2 business days
@@ -104,7 +125,7 @@ export function HomeFooter() {
         </p>
         <p className="flex items-center gap-2.5 sm:text-right">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/60 dark:ring-border sm:order-last">
-            <Heart className="size-4" />
+            <Heart className="size-4" aria-hidden />
           </span>
           <span className="max-w-md leading-relaxed">
             Handcrafted in small batches · © {new Date().getFullYear()} Chocolate Store

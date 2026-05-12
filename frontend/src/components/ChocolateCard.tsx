@@ -82,7 +82,7 @@ export function ChocolateCard({ chocolate: c }: Props) {
           aria-label={saved ? "Unsave" : "Save for later"}
           onClick={() => toggleSaved(c.id)}
         >
-          <Heart className={`size-4 ${saved ? "fill-current" : ""}`} />
+          <Heart className={`size-4 ${saved ? "fill-current" : ""}`} aria-hidden />
         </Button>
       </CardFooter>
     </Card>
