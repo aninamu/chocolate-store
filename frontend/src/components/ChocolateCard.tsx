@@ -23,11 +23,16 @@ export function ChocolateCard({ chocolate: c }: Props) {
   return (
     <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-md">
       <CardHeader className="p-0">
-        <Link href={`/shop/${c.id}`} className="block">
+        <Link
+          href={`/shop/${c.id}`}
+          className="block"
+          aria-hidden
+          tabIndex={-1}
+        >
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
             <Image
               src={c.image_url}
-              alt={c.name}
+              alt=""
               fill
               className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
               sizes="(max-width: 768px) 100vw, 25vw"

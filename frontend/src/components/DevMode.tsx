@@ -5,6 +5,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -918,6 +919,7 @@ function DevModeAgentPromptPanel({
   onPromptTerminal?: () => void;
 }) {
   const { agentId, agentStatus } = useDevMode();
+  const promptId = useId();
   const [turns, setTurns] = useState<AgentTurn[]>([]);
   const [prompt, setPrompt] = useState("");
   const abortRef = useRef<AbortController | null>(null);
@@ -1121,7 +1123,11 @@ function DevModeAgentPromptPanel({
       className="flex min-h-0 flex-1 flex-col gap-2 p-2"
     >
       <form onSubmit={onSubmit} className="flex shrink-0 flex-col gap-2">
+        <label htmlFor={promptId} className="sr-only">
+          Prompt the cloud agent
+        </label>
         <textarea
+          id={promptId}
           data-testid="dev-mode-agent-prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}

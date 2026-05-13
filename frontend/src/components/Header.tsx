@@ -2,7 +2,7 @@
 
 import { Heart, Menu, Package, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { buttonVariants, Button } from "@/components/ui/button";
 import { CartDrawer } from "@/components/CartDrawer";
@@ -18,7 +18,22 @@ export function Header() {
   const { cart } = useShop();
   const [cartOpen, setCartOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const mobileNavId = useId();
   const count = cart.reduce((a, b) => a + b.quantity, 0);
+
+  useEffect(() => {
+    if (!mobile) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobile(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobile]);
+
+  const cartLabel =
+    count > 0
+      ? `Open cart, ${count} ${count === 1 ? "item" : "items"}`
+      : "Open cart";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-card/85 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-card/70 dark:border-border dark:bg-card/80 dark:supports-[backdrop-filter]:bg-card/65">
@@ -49,18 +64,20 @@ export function Header() {
             variant="outline"
             className="relative md:hidden"
             onClick={() => setMobile((v) => !v)}
-            aria-label="Menu"
+            aria-expanded={mobile}
+            aria-controls={mobileNavId}
+            aria-label={mobile ? "Close menu" : "Open menu"}
           >
-            <Menu className="size-4" />
+            <Menu className="size-4" aria-hidden />
           </Button>
           <Button
             type="button"
             variant="secondary"
             className="relative"
             onClick={() => setCartOpen(true)}
-            aria-label="Open cart"
+            aria-label={cartLabel}
           >
-            <ShoppingCart className="size-4" />
+            <ShoppingCart className="size-4" aria-hidden />
             {count > 0 ? (
               <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                 {count > 9 ? "9+" : count}
@@ -70,8 +87,11 @@ export function Header() {
         </div>
       </div>
       {mobile ? (
-        <div className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20">
-          <div className="mx-auto flex max-w-6xl flex-col">
+        <div
+          id={mobileNavId}
+          className="border-t border-border/60 bg-muted/40 px-4 py-2 md:hidden dark:bg-muted/20"
+        >
+          <nav className="mx-auto flex max-w-6xl flex-col" aria-label="Mobile">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -82,7 +102,7 @@ export function Header() {
                 {l.label}
               </Link>
             ))}
-          </div>
+          </nav>
         </div>
       ) : null}
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />

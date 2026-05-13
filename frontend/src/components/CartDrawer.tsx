@@ -73,12 +73,16 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                         type="number"
                         min={0}
                         max={99}
+                        aria-label={
+                          p?.name
+                            ? `Quantity of ${p.name}`
+                            : "Quantity of unknown product"
+                        }
                         className="h-8 w-16 rounded-lg border border-input bg-card/50 px-2 text-sm shadow-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/20"
                         value={l.quantity}
                         onChange={(e) =>
                           setQty(l.chocolateId, Number(e.target.value) || 0)
                         }
-                        aria-label="Quantity"
                       />
                       <Button
                         type="button"
