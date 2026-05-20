@@ -18,7 +18,19 @@ frontend/coverage/
 .DS_Store
 # Ignore local Cursor project state; allow selected commands to be versioned.
 .cursor/*
+!.cursor/agents/
+.cursor/agents/*
+!.cursor/agents/backend-security-scanner.md
+!.cursor/agents/frontend-a11y-scanner.md
 !.cursor/commands/
 .cursor/commands/*
 !.cursor/commands/create-pd-incident.md
 !.cursor/commands/get-pd-incidents.md
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/plan-before-building.mdc
+!.cursor/skills/
+.cursor/skills/*
+!.cursor/skills/sync-seed-with-schema/
+.cursor/skills/sync-seed-with-schema/*
+!.cursor/skills/sync-seed-with-schema/SKILL.md

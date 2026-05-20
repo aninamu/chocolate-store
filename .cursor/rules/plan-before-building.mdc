@@ -1,0 +1,42 @@
+---
+description: Plan and get signoff before non-trivial changes
+alwaysApply: true
+---
+
+# Plan Before Building
+
+For non-trivial changes, write a short plan and wait for the user to sign off before making edits.
+
+## What counts as non-trivial
+
+- Touches multiple files, modules, or services
+- Introduces new dependencies, schemas, migrations, or public APIs
+- Has more than one reasonable approach with meaningful trade-offs
+- Changes behavior the user might want to weigh in on (auth, data model, billing, perf, UX)
+- Refactors that move or rename things across the codebase
+
+If unsure, default to planning.
+
+## What does NOT need a plan
+
+- Single-file edits with an obvious fix (typo, lint, small bug, comment)
+- Pure read-only investigation or questions
+- Small follow-ups inside an already-approved plan
+- Tasks the user explicitly told you to "just do"
+
+## Plan format
+
+Keep it brief. Include:
+
+1. **Goal** — one sentence on what you're solving
+2. **Approach** — the chosen path, plus 1–2 alternatives if there's real trade-off
+3. **Files / areas affected**
+4. **Risks or open questions**
+
+End with an explicit ask, e.g. "Sound good? I'll start once you confirm."
+
+Prefer switching to Plan mode (`SwitchMode`) for anything substantial rather than only writing the plan in chat.
+
+## After signoff
+
+Once the user approves, proceed without re-asking. If the plan changes materially mid-implementation (new files, different approach, scope creep), pause and re-confirm.
