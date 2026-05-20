@@ -22,6 +22,7 @@ frontend/coverage/
 !.cursor/hooks/
 .cursor/hooks/*
 !.cursor/hooks/scrub-sensitive-prompt.py
+!.cursor/hooks/test-scrub-sensitive-prompt.py
 !.cursor/agents/
 .cursor/agents/*
 !.cursor/agents/backend-security-scanner.md

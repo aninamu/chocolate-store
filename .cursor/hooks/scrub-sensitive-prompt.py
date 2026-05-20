@@ -10,6 +10,7 @@ from typing import Any
 
 
 REDACTION = "[REDACTED]"
+REDACTED_FIELD = "[REDACTED_FIELD]"
 MAX_PREVIEW_CHARS = 4000
 
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -23,6 +24,7 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
     ("openai-style key", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
     ("aws access key", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b")),
+    ("github fine-grained token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{22,255}\b")),
     ("github token", re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,255}\b")),
     ("slack token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
     ("stripe key", re.compile(r"\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{16,}\b")),
@@ -75,7 +77,7 @@ def scrub_string(value: str) -> tuple[str, set[str]]:
         findings.add("url credentials")
 
     def redact_assignment(match: re.Match[str]) -> str:
-        findings.add(match.group("key").lower())
+        findings.add("sensitive assignment")
         value = match.group("value")
         if value.startswith('"') and value.endswith('"'):
             replacement = f'"{REDACTION}"'
@@ -107,8 +109,8 @@ def scrub_payload(value: Any) -> tuple[Any, set[str]]:
         findings: set[str] = set()
         for key, item in value.items():
             if SENSITIVE_KEY_PATTERN.search(str(key)):
-                scrubbed_dict[key] = REDACTION
-                findings.add(str(key))
+                scrubbed_dict[REDACTED_FIELD] = REDACTION
+                findings.add("sensitive field")
                 continue
 
             scrubbed_item, item_findings = scrub_payload(item)
@@ -158,24 +160,21 @@ def main() -> int:
     except json.JSONDecodeError:
         emit(
             {
-                "permission": "deny",
                 "continue": False,
                 "user_message": "Prompt submission was blocked because the secret scrubber could not parse the hook input.",
-                "agent_message": "Secret scrubber hook received invalid JSON.",
             }
         )
         return 0
 
     scrubbed_payload, findings = scrub_payload(hook_input)
     if scrubbed_payload == hook_input:
-        emit({"permission": "allow", "continue": True})
+        emit({"continue": True})
         return 0
 
     preview = preview_redacted_prompt(scrubbed_payload)
     labels = ", ".join(sorted(findings)) if findings else "sensitive content"
     emit(
         {
-            "permission": "deny",
             "continue": False,
             "user_message": (
                 "Potential sensitive content was detected and the prompt was blocked before submission.\n\n"
@@ -183,7 +182,6 @@ def main() -> int:
                 "Copy and submit this redacted version if it is safe to continue:\n\n"
                 f"{preview}"
             ),
-            "agent_message": "Prompt blocked by the sensitive-content scrubber hook.",
         }
     )
     return 0
