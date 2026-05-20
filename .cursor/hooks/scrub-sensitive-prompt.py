@@ -10,7 +10,6 @@ from typing import Any
 
 
 REDACTION = "[REDACTED]"
-REDACTED_FIELD = "[REDACTED_FIELD]"
 MAX_PREVIEW_CHARS = 4000
 
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -109,7 +108,7 @@ def scrub_payload(value: Any) -> tuple[Any, set[str]]:
         findings: set[str] = set()
         for key, item in value.items():
             if SENSITIVE_KEY_PATTERN.search(str(key)):
-                scrubbed_dict[REDACTED_FIELD] = REDACTION
+                scrubbed_dict[key] = REDACTION
                 findings.add("sensitive field")
                 continue
 
