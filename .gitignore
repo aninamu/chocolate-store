@@ -31,4 +31,4 @@ frontend/coverage/
 !.cursor/rules/plan-before-building.mdc
 !.cursor/skills/
 .cursor/skills/*
-!.cursor/skills/sync-seed-with-schema/
+!.cursor/skills/sync-seed-with-schema/SKILL.md
