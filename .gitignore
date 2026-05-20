@@ -16,8 +16,12 @@ frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/
 .DS_Store
-# Ignore local Cursor project state; allow selected commands to be versioned.
+# Ignore local Cursor project state; allow selected shared Cursor config to be versioned.
 .cursor/*
+!.cursor/hooks.json
+!.cursor/hooks/
+.cursor/hooks/*
+!.cursor/hooks/scrub-sensitive-prompt.py
 !.cursor/agents/
 .cursor/agents/*
 !.cursor/agents/backend-security-scanner.md
