@@ -73,6 +73,19 @@ Optional **in-app Dev mode** (toggle in the UI) can open a **Cursor Cloud agent*
 4. In Redis CLI, run `KEYS chocolates:*` after loading `/api/chocolates` twice to show server-side list caching.
 5. `Ctrl-C` to prove nothing is left on the ports: `lsof -i :55432 -i :63790 -i :8000 -i :3000` should be empty (after any browser tabs close; Next may need a second for cleanup).
 
+## Social feed (demo)
+
+The **Feed** nav item opens a community timeline seeded with demo users, posts, likes, and comments. There is no real login — pick a **demo identity** from the dropdown (stored in `localStorage` as `cs.demoUser.v1`). Write actions send an `X-Demo-User-Id` header to the API.
+
+- **Feed:** `/feed` — browse posts, compose new ones, like/unlike with optimistic updates.
+- **Post detail:** `/feed/{id}` — full thread and comments.
+- **Profiles:** `/profiles/{id}` — author header and their posts.
+- **Moderation:** `/moderation` — open reports queue (switch to the **Mod Team** demo user).
+
+Post images use **HTTPS image URLs** in the composer (no file upload). External images must be reachable by the browser; catalog images use Unsplash and are allowlisted in [`frontend/next.config.ts`](./frontend/next.config.ts).
+
+Social API routes live under `/api/feed`, `/api/posts`, `/api/users`, and `/api/reports` — see OpenAPI at `/openapi.json` after `make dev`.
+
 ## Layout
 
 - [`backend/`](./backend) — FastAPI, SQLAlchemy (async). Schema is created from the models each run by [`app/init_db.py`](./backend/app/init_db.py); catalog data lives in [`app/seed.py`](./backend/app/seed.py).

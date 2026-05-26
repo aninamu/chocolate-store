@@ -7,6 +7,7 @@ import { useState } from "react";
 import { DevMode } from "@/components/DevMode";
 import { Toaster } from "@/components/ui/sonner";
 import { DevModeProvider } from "@/context/dev-mode";
+import { DemoUserProvider } from "@/context/demo-user";
 import { ShopProvider } from "@/context/shop-state";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -25,11 +26,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={client}>
         <ShopProvider>
-          <DevModeProvider>
-            {children}
-            <DevMode />
-            <Toaster position="top-center" richColors closeButton />
-          </DevModeProvider>
+          <DemoUserProvider>
+            <DevModeProvider>
+              {children}
+              <DevMode />
+              <Toaster position="top-center" richColors closeButton />
+            </DevModeProvider>
+          </DemoUserProvider>
         </ShopProvider>
       </QueryClientProvider>
     </ThemeProvider>
