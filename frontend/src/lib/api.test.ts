@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  createPost,
   fetchChocolate,
+  fetchFeed,
   fetchChocolates,
+  likePost,
   postCheckout,
 } from "@/lib/api";
 
@@ -118,5 +121,83 @@ describe("postCheckout", () => {
         ],
       })
     ).rejects.toThrow("bad");
+  });
+});
+
+describe("fetchFeed", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ items: [], next_offset: null }), {
+            status: 200,
+          })
+        )
+      )
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("passes demo user header when provided", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    await fetchFeed(0, { "X-Demo-User-Id": "user-1" });
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(init.headers).get("X-Demo-User-Id")).toBe("user-1");
+  });
+
+  it("throws when response is not ok", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response("", { status: 500 })
+    );
+    await expect(fetchFeed()).rejects.toThrow("Failed to load feed");
+  });
+});
+
+describe("createPost", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ id: "p1", text: "hi" }), { status: 201 })
+        )
+      )
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("POSTs JSON with demo headers", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    await createPost({ text: "hello" }, { "X-Demo-User-Id": "alice" });
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({ text: "hello" });
+    expect(new Headers(init.headers).get("X-Demo-User-Id")).toBe("alice");
+  });
+});
+
+describe("likePost", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ like_count: 3 }), { status: 201 })
+        )
+      )
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns like count from response", async () => {
+    const count = await likePost("post-1", { "X-Demo-User-Id": "u1" });
+    expect(count).toBe(3);
   });
 });

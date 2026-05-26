@@ -10,6 +10,7 @@ import { useShop } from "@/context/shop-state";
 
 const links = [
   { href: "/shop", label: "Shop" },
+  { href: "/feed", label: "Feed" },
   { href: "/saved", label: "Saved" },
   { href: "/cart", label: "Cart" },
 ];

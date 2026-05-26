@@ -145,4 +145,71 @@ SEED: list[dict] = [
     },
 ]
 
+# Fixed demo user IDs for predictable tests and frontend defaults.
+DEMO_USER_ALICE = "00000000-0000-4000-8000-000000000001"
+DEMO_USER_BOB = "00000000-0000-4000-8000-000000000002"
+DEMO_USER_MOD = "00000000-0000-4000-8000-000000000003"
+
+SOCIAL_USERS: list[dict] = [
+    {
+        "id": DEMO_USER_ALICE,
+        "name": "Alice Chen",
+        "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+        "is_moderator": False,
+    },
+    {
+        "id": DEMO_USER_BOB,
+        "name": "Bob Rivera",
+        "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+        "is_moderator": False,
+    },
+    {
+        "id": DEMO_USER_MOD,
+        "name": "Mod Team",
+        "avatar_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
+        "is_moderator": True,
+    },
+]
+
+# Posts reference chocolates by slug (resolved in init_db).
+SOCIAL_POSTS: list[dict] = [
+    {
+        "author_id": DEMO_USER_ALICE,
+        "chocolate_slug": "ecuador-single-origin-70",
+        "text": "Just tried this bar — the fig notes are incredible with espresso.",
+        "image_url": "https://images.unsplash.com/photo-1511381939415-e44015466834?w=800&q=80",
+    },
+    {
+        "author_id": DEMO_USER_BOB,
+        "chocolate_slug": "madagascar-sambirano-85",
+        "text": "85% that still feels fruity. Perfect after dinner.",
+        "image_url": None,
+    },
+    {
+        "author_id": DEMO_USER_ALICE,
+        "chocolate_slug": None,
+        "text": "Anyone else pairing dark chocolate with orange peel?",
+        "image_url": None,
+    },
+]
+
+SOCIAL_COMMENTS: list[dict] = [
+    {
+        "post_index": 0,
+        "author_id": DEMO_USER_BOB,
+        "text": "Agreed — I add a pinch of flaky salt on top.",
+    },
+    {
+        "post_index": 2,
+        "author_id": DEMO_USER_BOB,
+        "text": "Orange Zest 65% is made for that combo.",
+    },
+]
+
+SOCIAL_LIKES: list[dict] = [
+    {"post_index": 0, "user_id": DEMO_USER_BOB},
+    {"post_index": 0, "user_id": DEMO_USER_MOD},
+    {"post_index": 1, "user_id": DEMO_USER_ALICE},
+]
+
 
