@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { fetchUserPosts, fetchUserProfile } from "@/lib/api";
+import type { Post } from "@/lib/types";
 import { useDemoUser } from "@/context/demo-user";
 import { PostCard } from "@/components/social/PostCard";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const id = String(params.id ?? "");
   const { demoHeaders } = useDemoUser();
   const [offset, setOffset] = useState(0);
+  const [extraItems, setExtraItems] = useState<Post[]>([]);
 
   const profile = useQuery({
     queryKey: ["profile", id],
@@ -25,10 +27,26 @@ export default function ProfilePage() {
   });
 
   const posts = useQuery({
-    queryKey: ["profile-posts", id, offset],
+    queryKey: ["profile-posts", id, offset === 0 ? "initial" : offset],
     queryFn: () => fetchUserPosts(id, offset, demoHeaders()),
     enabled: Boolean(id),
   });
+
+  const items =
+    offset === 0
+      ? (posts.data?.items ?? [])
+      : [...extraItems, ...(posts.data?.items ?? [])];
+
+  const handleLoadMore = () => {
+    const next = posts.data?.next_offset;
+    if (next == null) return;
+    if (offset === 0 && posts.data) {
+      setExtraItems(posts.data.items);
+    } else if (posts.data) {
+      setExtraItems((prev) => [...prev, ...posts.data!.items]);
+    }
+    setOffset(next);
+  };
 
   if (profile.isError) {
     return (
@@ -78,11 +96,11 @@ export default function ProfilePage() {
       <section aria-label={`Posts by ${user.name}`}>
         {posts.isLoading ? (
           <Skeleton className="h-40 w-full rounded-xl" aria-hidden />
-        ) : (posts.data?.items.length ?? 0) === 0 ? (
+        ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No posts yet.</p>
         ) : (
           <ul className="space-y-4">
-            {(posts.data?.items ?? []).map((post) => (
+            {items.map((post) => (
               <li key={post.id}>
                 <PostCard post={post} showActions={false} />
               </li>
@@ -94,9 +112,11 @@ export default function ProfilePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOffset(posts.data!.next_offset!)}
+              onClick={handleLoadMore}
+              disabled={posts.isFetching}
+              aria-busy={posts.isFetching}
             >
-              Load more
+              {posts.isFetching ? "Loading…" : "Load more"}
             </Button>
           </div>
         ) : null}

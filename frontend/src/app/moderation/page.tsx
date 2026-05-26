@@ -19,7 +19,7 @@ export default function ModerationPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["reports"],
+    queryKey: ["reports", userId],
     queryFn: () => fetchOpenReports(demoHeaders()),
     retry: false,
   });

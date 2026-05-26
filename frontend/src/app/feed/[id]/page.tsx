@@ -32,7 +32,7 @@ export default function PostDetailPage() {
   const [comment, setComment] = useState("");
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["post", id],
+    queryKey: ["post", id, userId],
     queryFn: () => fetchPost(id, demoHeaders()),
     enabled: Boolean(id),
   });
@@ -43,7 +43,7 @@ export default function PostDetailPage() {
       return unlikePost(id, demoHeaders());
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["post", id] });
+      void queryClient.invalidateQueries({ queryKey: ["post", id, userId] });
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -54,7 +54,7 @@ export default function PostDetailPage() {
     onSuccess: () => {
       setComment("");
       toast.success("Comment added");
-      void queryClient.invalidateQueries({ queryKey: ["post", id] });
+      void queryClient.invalidateQueries({ queryKey: ["post", id, userId] });
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
     onError: (err: Error) => toast.error(err.message),

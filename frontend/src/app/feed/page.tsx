@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { fetchFeed, likePost, unlikePost } from "@/lib/api";
@@ -15,15 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FeedPage() {
-  const { demoHeaders, isReady } = useDemoUser();
+  const { demoHeaders, isReady, userId } = useDemoUser();
   const queryClient = useQueryClient();
   const [offset, setOffset] = useState(0);
   const [extraItems, setExtraItems] = useState<Post[]>([]);
-  const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [likePendingId, setLikePendingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    setOffset(0);
+    setExtraItems([]);
+  }, [userId]);
+
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["feed", offset === 0 ? "initial" : offset],
+    queryKey: ["feed", userId, offset === 0 ? "initial" : offset],
     queryFn: async () => {
       const page = await fetchFeed(offset, demoHeaders());
       return page;
@@ -36,7 +40,7 @@ export default function FeedPage() {
       ? (data?.items ?? [])
       : [...extraItems, ...(data?.items ?? [])];
 
-  const loadMoreOffset = offset === 0 ? data?.next_offset : nextOffset;
+  const loadMoreOffset = data?.next_offset;
 
   const likeMutation = useMutation({
     mutationFn: async ({
@@ -63,7 +67,7 @@ export default function FeedPage() {
             }
           : p;
       queryClient.setQueryData<{ items: Post[]; next_offset: number | null }>(
-        ["feed", "initial"],
+        ["feed", userId, "initial"],
         (old) =>
           old
             ? { ...old, items: old.items.map(updater) }
@@ -82,7 +86,7 @@ export default function FeedPage() {
             }
           : p;
       queryClient.setQueryData<{ items: Post[]; next_offset: number | null }>(
-        ["feed", "initial"],
+        ["feed", userId, "initial"],
         (old) =>
           old
             ? { ...old, items: old.items.map(rollback) }
@@ -103,12 +107,13 @@ export default function FeedPage() {
     [likeMutation]
   );
 
-  const handleLoadMore = async () => {
-    const next = loadMoreOffset;
+  const handleLoadMore = () => {
+    const next = data?.next_offset;
     if (next == null) return;
     if (offset === 0 && data) {
       setExtraItems(data.items);
-      setNextOffset(data.next_offset);
+    } else if (data) {
+      setExtraItems((prev) => [...prev, ...data.items]);
     }
     setOffset(next);
   };

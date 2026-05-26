@@ -9,8 +9,6 @@ import {
   useState,
 } from "react";
 
-import type { DemoUser } from "@/lib/types";
-
 const STORAGE_KEY = "cs.demoUser.v1";
 export const DEFAULT_DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
 
@@ -68,8 +66,4 @@ export function useDemoUser() {
     throw new Error("useDemoUser must be used within DemoUserProvider");
   }
   return ctx;
-}
-
-export function demoUserLabel(user: DemoUser) {
-  return user.name;
 }
