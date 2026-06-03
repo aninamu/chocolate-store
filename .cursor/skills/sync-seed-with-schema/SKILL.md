@@ -1,20 +1,20 @@
 ---
 name: sync-seed-with-schema
-description: When schema updates are made in backend/app/schemas, update backend/app/seed.py to ensure seeded db items match the schema. Use whenever editing, adding, or removing fields in any file under backend/app/schemas/, or when the user mentions Pydantic schemas, ChocolateOut, seed data, or seed.py drift.
+description: When API output types change in the Rust backend, update backend/src/seed.rs so seeded catalog rows match. Use when editing backend/src/dto.rs (ChocolateOut), seed data, or catalog field drift.
 ---
 
-# Sync seed.py with backend schema changes
+# Sync seed.rs with backend schema changes
 
-When any file under `backend/app/schemas/` is modified, the seed catalog in `backend/app/seed.py` (and the wiring in `backend/app/init_db.py`) can drift. This skill makes sure seeded DB rows still satisfy the schema after every change.
+When `ChocolateOut` or insert logic in `backend/src/seed.rs` / `init_db` changes, the `SEED` catalog can drift. This skill makes sure seeded DB rows still satisfy the API contract after every change.
 
 ## Files involved
 
-- `backend/app/schemas/` — Pydantic API schemas (e.g. `ChocolateOut`).
-- `backend/app/models/chocolate.py` — Beanie `Document` models (catalog + orders). The seed feeds `Chocolate` directly.
-- `backend/app/seed.py` — `SEED: list[dict]` of catalog rows.
-- `backend/app/init_db.py` — constructs `Chocolate(...)` from each `SEED` row.
+- `backend/src/dto.rs` — API types (e.g. `ChocolateOut`).
+- `backend/src/models.rs` — SQL row types for queries.
+- `backend/src/seed.rs` — `SEED` catalog rows and `insert_seed_rows`.
+- `backend/src/bin/init_db.rs` — runs schema + seed on `make services-up`.
 
-The DB is wiped and reseeded on every `make dev`, so `seed.py` is the single source of truth for catalog data.
+The DB is wiped and reseeded on every `make dev`, so `seed.rs` is the single source of truth for catalog data.
 
 ## The audit's central question
 

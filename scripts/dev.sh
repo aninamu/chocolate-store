@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run backend (uvicorn --reload) and frontend (next dev) in parallel.
+# Run backend (Rust server) and frontend (next dev) in parallel.
 # On exit (Ctrl-C), stop app processes and run services-down.
 set -euo pipefail
 
@@ -23,8 +23,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Pipe logs with simple prefixes (portable on macOS)
-( cd "$ROOT/backend" && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port "$BACKEND_PORT" 2>&1 | while IFS= read -r line; do echo "[backend]  $line"; done ) &
+( cd "$ROOT/backend" && cargo run --release --bin server 2>&1 | while IFS= read -r line; do echo "[backend]  $line"; done ) &
 ( cd "$ROOT/frontend" && npm run dev -- -p "$FRONTEND_PORT" 2>&1 | while IFS= read -r line; do echo "[frontend] $line"; done ) &
 
 wait

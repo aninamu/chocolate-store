@@ -10,7 +10,7 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql+asyncpg://chocolate@127.0.0.1:55432/chocolate_store
+      DATABASE_URL: postgresql://chocolate@127.0.0.1:55432/chocolate_store
       REDIS_URL: redis://127.0.0.1:63790/0
     services:
       postgres:
@@ -40,21 +40,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Install backend dependencies
-        run: |
-          python -m venv backend/.venv
-          backend/.venv/bin/pip install -U pip
-          backend/.venv/bin/pip install -e "backend[dev]"
+      - name: Build backend
+        run: cargo build --manifest-path backend/Cargo.toml --release
 
       - name: Initialize schema and seed data
-        run: |
-          cd backend
-          .venv/bin/python -m app.init_db
+        run: cargo run --manifest-path backend/Cargo.toml --release --bin init_db
 
       - name: Run backend tests
         run: make test-backend

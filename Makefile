@@ -42,12 +42,12 @@ redis-cli:
 	@set -a && [ -f .env ] && . ./.env && set +a && \
 		redis-cli -p "$$REDIS_PORT"
 
-# Tests (run `make setup` first so backend/.venv and frontend/node_modules exist)
+# Tests (run `make setup` first; backend tests need Postgres/Redis via `make services-up`)
 test-backend:
-	@cd $(ROOT)/backend && ./.venv/bin/pytest -q
+	@cd $(ROOT)/backend && cargo test -q
 
 test-backend-coverage:
-	@cd $(ROOT)/backend && ./.venv/bin/pytest -q --cov=app --cov-report=term-missing --cov-report=html:htmlcov
+	@cd $(ROOT)/backend && (command -v cargo-llvm-cov >/dev/null 2>&1 && cargo llvm-cov test -q || cargo test -q)
 
 test-frontend:
 	@cd $(ROOT)/frontend && npm run test
