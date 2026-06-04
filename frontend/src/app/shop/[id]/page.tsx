@@ -5,7 +5,7 @@ import { Heart } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
-import { fetchChocolate } from "@/lib/api";
+import { chocolateQueryOptions } from "@/lib/chocolate-queries";
 import { formatPrice } from "@/lib/format";
 import { AddToCartControl } from "@/components/AddToCartControl";
 import { Badge } from "@/components/ui/badge";
@@ -19,11 +19,9 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { toggleSaved, isSaved, isReady } = useShop();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolate", id],
-    queryFn: () => fetchChocolate(id),
-    enabled: Boolean(id),
-  });
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    chocolateQueryOptions(id)
+  );
   const saved = data && isSaved(data.id);
 
   if (isError) {

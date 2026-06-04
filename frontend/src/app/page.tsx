@@ -4,16 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-import { fetchChocolates } from "@/lib/api";
+import { allChocolatesQueryOptions } from "@/lib/chocolate-queries";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
-  });
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    allChocolatesQueryOptions()
+  );
   const featured = data?.slice(0, 4) ?? [];
 
   return (

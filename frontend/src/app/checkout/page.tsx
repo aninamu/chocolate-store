@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { fetchChocolates, postCheckout } from "@/lib/api";
+import { postCheckout } from "@/lib/api";
+import { allChocolatesQueryOptions } from "@/lib/chocolate-queries";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +21,7 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
+    ...allChocolatesQueryOptions(),
     enabled: cart.length > 0,
   });
   const byId = new Map(products?.map((p) => [p.id, p]) ?? []);

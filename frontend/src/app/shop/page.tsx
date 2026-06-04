@@ -13,7 +13,10 @@ import {
   Suspense,
 } from "react";
 
-import { fetchChocolates } from "@/lib/api";
+import {
+  allChocolatesQueryOptions,
+  chocolatesQueryOptions,
+} from "@/lib/chocolate-queries";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -243,11 +246,9 @@ function ShopContent() {
     setSort((sp.get("sort") as string) || "name");
   }, [sp]);
 
-  const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery({
-    queryKey: ["chocolates", "all-for-tag-picker", { sort: "name" as const }],
-    queryFn: () => fetchChocolates({ sort: "name" }),
-    staleTime: 60_000,
-  });
+  const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery(
+    allChocolatesQueryOptions()
+  );
   const tagOptions = useMemo(
     () =>
       [...new Set(catalogForTags?.flatMap((c) => c.tags) ?? [])].sort(
@@ -256,14 +257,12 @@ function ShopContent() {
     [catalogForTags]
   );
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", { tags: tagQ.slice().sort(), sort: sortQ }],
-    queryFn: () =>
-      fetchChocolates({
-        tags: tagQ.length ? tagQ : undefined,
-        sort: sortQ,
-      }),
-  });
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    chocolatesQueryOptions({
+      tags: tagQ,
+      sort: sortQ,
+    })
+  );
 
   const onApply = useCallback(() => {
     const p = new URLSearchParams();

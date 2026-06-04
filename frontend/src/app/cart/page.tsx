@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { fetchChocolates } from "@/lib/api";
+import { allChocolatesQueryOptions } from "@/lib/chocolate-queries";
 import { formatPrice } from "@/lib/format";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { useShop } from "@/context/shop-state";
@@ -14,8 +14,7 @@ export default function CartPage() {
   const router = useRouter();
   const { cart, setQty, removeFromCart, clearCart } = useShop();
   const { data: products, isLoading } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
+    ...allChocolatesQueryOptions(),
     enabled: cart.length > 0,
   });
   const byId = new Map(products?.map((p) => [p.id, p]) ?? []);

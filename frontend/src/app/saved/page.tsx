@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { fetchChocolates } from "@/lib/api";
+import { allChocolatesQueryOptions } from "@/lib/chocolate-queries";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShop } from "@/context/shop-state";
@@ -11,10 +11,9 @@ import { Button } from "@/components/ui/button";
 
 export default function SavedPage() {
   const { saved } = useShop();
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
-  });
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    allChocolatesQueryOptions()
+  );
 
   const list = useMemo(() => {
     if (!data?.length) return [];
