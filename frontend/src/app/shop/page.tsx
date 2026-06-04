@@ -257,7 +257,7 @@ function ShopContent() {
     [catalogForTags]
   );
 
-  const { data, isLoading, isError, error, refetch } = useQuery(
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery(
     chocolatesQueryOptions({
       tags: tagQ,
       sort: sortQ,
@@ -326,6 +326,11 @@ function ShopContent() {
           Apply
         </Button>
       </div>
+      {isFetching && !isLoading ? (
+        <p role="status" aria-live="polite" className="mb-3 text-sm text-muted-foreground">
+          Updating results...
+        </p>
+      ) : null}
       {isError ? (
         <p className="text-destructive">
           {(error as Error).message}{" "}
