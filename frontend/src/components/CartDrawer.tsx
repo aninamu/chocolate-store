@@ -5,7 +5,7 @@ import { ArrowRight, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { fetchChocolates } from "@/lib/api";
+import { chocolatesQueryKey, fetchChocolates } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -19,7 +19,7 @@ type Props = {
 export function CartDrawer({ open, onOpenChange }: Props) {
   const { cart, setQty, removeFromCart, clearCart } = useShop();
   const { data: products, isLoading } = useQuery({
-    queryKey: ["chocolates", "all"],
+    queryKey: chocolatesQueryKey(),
     queryFn: () => fetchChocolates(),
     enabled: open && cart.length > 0,
   });
