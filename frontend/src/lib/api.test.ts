@@ -29,6 +29,17 @@ describe("fetchChocolates", () => {
     expect(url).toContain("http://api.test/api/chocolates");
     expect(url).toContain("tag=dark");
     expect(url).toContain("tag=milk");
+    expect(url).toContain("sort=name");
+  });
+
+  it("includes default sort on unfiltered catalog fetch", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+
+    await fetchChocolates();
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain("sort=name");
   });
 
   it("sends one tag param for a single selected tag", async () => {

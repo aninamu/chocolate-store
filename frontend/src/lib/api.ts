@@ -1,18 +1,19 @@
+import {
+  buildChocolatesListSearchParams,
+  type ChocolateListParams,
+} from "@/lib/chocolate-catalog";
 import type { CheckoutPayload, CheckoutResponse, Chocolate } from "@/lib/types";
 
 const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-export async function fetchChocolates(params?: {
-  tags?: string[];
-  sort?: string;
-}): Promise<Chocolate[]> {
+export async function fetchChocolates(
+  params?: ChocolateListParams
+): Promise<Chocolate[]> {
   const u = new URL("/api/chocolates", base());
-  if (params?.tags?.length) {
-    for (const t of params.tags) {
-      if (t) u.searchParams.append("tag", t);
-    }
-  }
-  if (params?.sort) u.searchParams.set("sort", params.sort);
+  const search = buildChocolatesListSearchParams(params);
+  search.forEach((value, key) => {
+    u.searchParams.append(key, value);
+  });
   const res = await fetch(u.toString(), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load chocolates");
   return res.json() as Promise<Chocolate[]>;

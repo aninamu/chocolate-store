@@ -14,6 +14,7 @@ import {
 } from "react";
 
 import { fetchChocolates } from "@/lib/api";
+import { chocolateListQueryKey } from "@/lib/chocolate-catalog";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -244,8 +245,8 @@ function ShopContent() {
   }, [sp]);
 
   const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery({
-    queryKey: ["chocolates", "all-for-tag-picker", { sort: "name" as const }],
-    queryFn: () => fetchChocolates({ sort: "name" }),
+    queryKey: chocolateListQueryKey(),
+    queryFn: () => fetchChocolates(),
     staleTime: 60_000,
   });
   const tagOptions = useMemo(
@@ -257,7 +258,10 @@ function ShopContent() {
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", { tags: tagQ.slice().sort(), sort: sortQ }],
+    queryKey: chocolateListQueryKey({
+      tags: tagQ.length ? tagQ : undefined,
+      sort: sortQ,
+    }),
     queryFn: () =>
       fetchChocolates({
         tags: tagQ.length ? tagQ : undefined,

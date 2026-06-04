@@ -5,13 +5,14 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { fetchChocolates } from "@/lib/api";
+import { chocolateListQueryKey } from "@/lib/chocolate-catalog";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", "all"],
+    queryKey: chocolateListQueryKey(),
     queryFn: () => fetchChocolates(),
   });
   const featured = data?.slice(0, 4) ?? [];

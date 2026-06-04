@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { fetchChocolates } from "@/lib/api";
+import { chocolateListQueryKey } from "@/lib/chocolate-catalog";
 import { formatPrice } from "@/lib/format";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -19,7 +20,7 @@ type Props = {
 export function CartDrawer({ open, onOpenChange }: Props) {
   const { cart, setQty, removeFromCart, clearCart } = useShop();
   const { data: products, isLoading } = useQuery({
-    queryKey: ["chocolates", "all"],
+    queryKey: chocolateListQueryKey(),
     queryFn: () => fetchChocolates(),
     enabled: open && cart.length > 0,
   });
