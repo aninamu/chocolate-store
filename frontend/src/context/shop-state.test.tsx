@@ -2,7 +2,11 @@ import { render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, beforeEach } from "vitest";
 
-import { ShopProvider, useShop } from "@/context/shop-state";
+import {
+  MAX_CART_QUANTITY,
+  ShopProvider,
+  useShop,
+} from "@/context/shop-state";
 
 function Harness() {
   const {
@@ -29,6 +33,9 @@ function Harness() {
       </button>
       <button type="button" onClick={() => setQty("c2", 5)}>
         set-c2-5
+      </button>
+      <button type="button" onClick={() => setQty("c2", 150)}>
+        set-c2-150
       </button>
       <button type="button" onClick={() => clearCart()}>
         clear
@@ -68,6 +75,60 @@ describe("ShopProvider", () => {
     await waitFor(() =>
       expect(view.getByTestId("cart").textContent).toContain("x")
     );
+  });
+
+  it("falls back when persisted cart and saved state have invalid shapes", async () => {
+    localStorage.setItem("cs.cart.v1", JSON.stringify({ chocolateId: "x" }));
+    localStorage.setItem("cs.saved.v1", JSON.stringify({ id: "c1" }));
+
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+    expect(JSON.parse(view.getByTestId("cart").textContent || "null")).toEqual(
+      []
+    );
+    expect(JSON.parse(view.getByTestId("saved").textContent || "null")).toEqual(
+      []
+    );
+  });
+
+  it("sanitizes persisted cart lines and saved ids", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([
+        { chocolateId: "c1", quantity: MAX_CART_QUANTITY + 1 },
+        { chocolateId: "c2", quantity: 1.7 },
+        { chocolateId: "c3", quantity: 0 },
+        { chocolateId: 42, quantity: 3 },
+      ])
+    );
+    localStorage.setItem("cs.saved.v1", JSON.stringify(["c1", 42, "c2"]));
+
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+    expect(JSON.parse(view.getByTestId("cart").textContent || "[]")).toEqual([
+      { chocolateId: "c1", quantity: MAX_CART_QUANTITY },
+      { chocolateId: "c2", quantity: 1 },
+    ]);
+    expect(JSON.parse(view.getByTestId("saved").textContent || "[]")).toEqual([
+      "c1",
+      "c2",
+    ]);
   });
 
   it("addToCart merges quantities and persists", async () => {
@@ -149,6 +210,30 @@ describe("ShopProvider", () => {
         { chocolateId: "c1", quantity: 1 },
         { chocolateId: "c2", quantity: 5 },
         { chocolateId: "c3", quantity: 1 },
+      ]);
+    });
+  });
+
+  it("setQty clamps quantities to the cart maximum", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(
+      within(container).getByRole("button", { name: "set-c2-150" })
+    );
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([
+        { chocolateId: "c2", quantity: MAX_CART_QUANTITY },
       ]);
     });
   });

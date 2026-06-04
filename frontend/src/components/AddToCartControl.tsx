@@ -3,11 +3,9 @@
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useShop } from "@/context/shop-state";
+import { MAX_CART_QUANTITY, useShop } from "@/context/shop-state";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const MAX_QTY = 99;
 
 type Props = {
   chocolateId: string;
@@ -31,7 +29,7 @@ export function AddToCartControl({
     cart.find((l) => l.chocolateId === chocolateId)?.quantity ?? 0;
 
   const addDisabled = !inStock || !isReady;
-  const canIncrement = qty < MAX_QTY;
+  const canIncrement = qty < MAX_CART_QUANTITY;
 
   if (qty === 0) {
     return (
@@ -100,7 +98,9 @@ export function AddToCartControl({
         className="shrink-0 border-transparent bg-transparent shadow-none hover:bg-muted/80"
         aria-label="Increase quantity"
         disabled={!isReady || !canIncrement}
-        onClick={() => setQty(chocolateId, Math.min(MAX_QTY, qty + 1))}
+        onClick={() =>
+          setQty(chocolateId, Math.min(MAX_CART_QUANTITY, qty + 1))
+        }
       >
         <Plus className="size-4" />
       </Button>
