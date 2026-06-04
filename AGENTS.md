@@ -37,6 +37,8 @@ If bootstrap fails with missing `initdb` / `redis-server` or SSL errors from `pi
 
 After packages are installed, the usual flow is `make setup`, then `make services-up`, then `make dev` (or `make test` with services up).
 
+If you just approved outbound domains and installs still fail with TLS errors (PyPI/npm) or apt `404`/`Release file` errors, **start a new Cloud Agent session** so the VM picks up the updated network policy, then run `make setup` again.
+
 ### Non-obvious caveats
 
 - PostgreSQL binaries (`pg_ctl`, `initdb`, etc.) live at `/usr/lib/postgresql/16/bin/` on Ubuntu. The `scripts/postgres-path.sh` helper auto-adds this to `PATH`.
