@@ -33,3 +33,6 @@
 - Redis gracefully degrades — the backend still works without it (no caching).
 - The `.env` file is auto-created from `.env.example` on first bootstrap. Ports are non-standard (55432, 63790) to avoid collisions with system services.
 - `make stop` is a hard teardown if `Ctrl-C` didn't clean up properly.
+- On Ubuntu, install **`postgresql-16`** (not only the `postgresql` metapackage) so `initdb` / `pg_ctl` are available; `scripts/postgres-path.sh` adds `/usr/lib/postgresql/16/bin` to `PATH`.
+- If `./scripts/bootstrap.sh` / `make setup` fails with TLS/SSL errors while talking to PyPI, the VM likely needs egress allowlisting for **`pypi.org`** and **`files.pythonhosted.org`** (and **`registry.npmjs.org`** for a fresh `frontend/node_modules`). An existing `backend/.venv` with `chocolate-store-api` already installed can still run the API without re-running pip.
+- To keep Postgres/Redis running while developing in a long-lived session (e.g. tmux), use `make services-up` and start `uvicorn` + `npm run dev` separately instead of `make dev` (which runs `services-down` on exit).
