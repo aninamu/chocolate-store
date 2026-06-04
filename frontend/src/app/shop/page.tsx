@@ -13,7 +13,7 @@ import {
   Suspense,
 } from "react";
 
-import { fetchChocolates } from "@/lib/api";
+import { chocolatesQueryKey, fetchChocolates } from "@/lib/api";
 import { ChocolateCard } from "@/components/ChocolateCard";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -244,9 +244,8 @@ function ShopContent() {
   }, [sp]);
 
   const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery({
-    queryKey: ["chocolates", "all-for-tag-picker", { sort: "name" as const }],
+    queryKey: chocolatesQueryKey({ sort: "name" }),
     queryFn: () => fetchChocolates({ sort: "name" }),
-    staleTime: 60_000,
   });
   const tagOptions = useMemo(
     () =>
@@ -257,7 +256,7 @@ function ShopContent() {
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", { tags: tagQ.slice().sort(), sort: sortQ }],
+    queryKey: chocolatesQueryKey({ tags: tagQ, sort: sortQ }),
     queryFn: () =>
       fetchChocolates({
         tags: tagQ.length ? tagQ : undefined,

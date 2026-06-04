@@ -2,26 +2,50 @@ import type { CheckoutPayload, CheckoutResponse, Chocolate } from "@/lib/types";
 
 const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-export async function fetchChocolates(params?: {
+const validChocolateSorts = new Set([
+  "name",
+  "price_asc",
+  "price_desc",
+  "cacao_desc",
+]);
+
+export type FetchChocolatesParams = {
   tags?: string[];
   sort?: string;
-}): Promise<Chocolate[]> {
+};
+
+export function normalizeChocolatesParams(params?: FetchChocolatesParams) {
+  const tags = (params?.tags ?? [])
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+  const sort = validChocolateSorts.has(params?.sort ?? "")
+    ? params?.sort ?? "name"
+    : "name";
+
+  return { tags, sort };
+}
+
+export function chocolatesQueryKey(params?: FetchChocolatesParams) {
+  return ["chocolates", normalizeChocolatesParams(params)] as const;
+}
+
+export async function fetchChocolates(
+  params?: FetchChocolatesParams
+): Promise<Chocolate[]> {
+  const normalized = normalizeChocolatesParams(params);
   const u = new URL("/api/chocolates", base());
-  if (params?.tags?.length) {
-    for (const t of params.tags) {
-      if (t) u.searchParams.append("tag", t);
-    }
+  if (normalized.tags.length) {
+    for (const t of normalized.tags) u.searchParams.append("tag", t);
   }
-  if (params?.sort) u.searchParams.set("sort", params.sort);
-  const res = await fetch(u.toString(), { cache: "no-store" });
+  u.searchParams.set("sort", normalized.sort);
+  const res = await fetch(u.toString());
   if (!res.ok) throw new Error("Failed to load chocolates");
   return res.json() as Promise<Chocolate[]>;
 }
 
 export async function fetchChocolate(id: string): Promise<Chocolate> {
-  const res = await fetch(`${base()}/api/chocolates/${id}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${base()}/api/chocolates/${id}`);
   if (res.status === 404) throw new Error("Not found");
   if (!res.ok) throw new Error("Failed to load chocolate");
   return res.json() as Promise<Chocolate>;

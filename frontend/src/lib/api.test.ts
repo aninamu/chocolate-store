@@ -1,10 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  chocolatesQueryKey,
   fetchChocolate,
   fetchChocolates,
   postCheckout,
 } from "@/lib/api";
+
+describe("chocolatesQueryKey", () => {
+  it("normalizes empty catalog params to the backend default sort", () => {
+    expect(chocolatesQueryKey()).toEqual([
+      "chocolates",
+      { tags: [], sort: "name" },
+    ]);
+  });
+
+  it("normalizes tags and unsupported sorts", () => {
+    expect(
+      chocolatesQueryKey({
+        tags: [" milk ", "", "dark"],
+        sort: "unknown",
+      })
+    ).toEqual(["chocolates", { tags: ["dark", "milk"], sort: "name" }]);
+  });
+});
 
 describe("fetchChocolates", () => {
   beforeEach(() => {
@@ -26,9 +45,9 @@ describe("fetchChocolates", () => {
     await fetchChocolates({ tags: ["dark", "milk"] });
 
     const url = String(fetchMock.mock.calls[0]?.[0]);
-    expect(url).toContain("http://api.test/api/chocolates");
-    expect(url).toContain("tag=dark");
-    expect(url).toContain("tag=milk");
+    expect(url).toBe(
+      "http://api.test/api/chocolates?tag=dark&tag=milk&sort=name"
+    );
   });
 
   it("sends one tag param for a single selected tag", async () => {
@@ -40,6 +59,17 @@ describe("fetchChocolates", () => {
     const url = String(fetchMock.mock.calls[0]?.[0]);
     expect(url).toContain("tag=dark");
     expect(url.split("tag=").length).toBe(2);
+  });
+
+  it("normalizes empty params to the default sort URL", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+
+    await fetchChocolates();
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "http://api.test/api/chocolates?sort=name"
+    );
   });
 
   it("throws when response is not ok", async () => {
