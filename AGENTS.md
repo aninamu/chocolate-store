@@ -25,6 +25,20 @@
 
 - Frontend: `cd frontend && npx eslint .`
 
+### Cloud agent VM prerequisites
+
+`make setup` and `make dev` expect **Postgres 16**, **Redis 7**, and **`python3.12-venv`** on the VM (see README apt packages). Bootstrap also runs `pip install` and `npm install`, which need working egress to PyPI and the npm registry.
+
+If bootstrap fails with missing `initdb` / `redis-server` or SSL errors from `pip` / `npm`, allow outbound access to:
+
+- `archive.ubuntu.com`, `security.ubuntu.com` (apt)
+- `pypi.org`, `files.pythonhosted.org` (Python dependencies)
+- `registry.npmjs.org` (frontend dependencies)
+
+After packages are installed, the usual flow is `make setup`, then `make services-up`, then `make dev` (or `make test` with services up).
+
+If you just approved outbound domains and installs still fail with TLS errors (PyPI/npm) or apt `404`/`Release file` errors, **start a new Cloud Agent session** so the VM picks up the updated network policy, then run `make setup` again.
+
 ### Non-obvious caveats
 
 - PostgreSQL binaries (`pg_ctl`, `initdb`, etc.) live at `/usr/lib/postgresql/16/bin/` on Ubuntu. The `scripts/postgres-path.sh` helper auto-adds this to `PATH`.
