@@ -342,7 +342,7 @@ function ShopContent() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {data?.map((c) => <ChocolateCard key={c.id} chocolate={c} />)}
+          {data?.map((c) => <ChocolateCard key={c.id} chocolate={c} showQuote />)}
         </div>
       )}
       {!isLoading && data?.length === 0 ? (

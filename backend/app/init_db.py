@@ -27,6 +27,7 @@ async def _run() -> None:
                     cacao_percentage=row.get("cacao_percentage"),
                     price_cents=row["price_cents"],
                     image_url=row["image_url"],
+                    churrito_quote=row.get("churrito_quote"),
                     tags=row["tags"],
                     in_stock=True,
                 )

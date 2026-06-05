@@ -10,6 +10,7 @@ export type Chocolate = {
   tags: string[];
   in_stock: boolean;
   created_at: string;
+  churrito_quote: string | null;
 };
 
 export type CartLine = {

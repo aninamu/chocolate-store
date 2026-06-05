@@ -14,14 +14,18 @@ import { useShop } from "@/context/shop-state";
 
 type Props = {
   chocolate: Chocolate;
+  showQuote?: boolean;
 };
 
-export function ChocolateCard({ chocolate: c }: Props) {
+const CHURRITO_QUOTE_FALLBACK =
+  "Whatever you pick, it's a treat worth wagging for - chocolatier's honor!";
+
+export function ChocolateCard({ chocolate: c, showQuote = false }: Props) {
   const { toggleSaved, isSaved, isReady } = useShop();
   const saved = isSaved(c.id);
 
   return (
-    <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-md">
+    <Card className="group overflow-hidden transition-shadow duration-300 hover:shadow-md">
       <CardHeader className="p-0">
         <Link href={`/shop/${c.id}`} className="block">
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
@@ -36,6 +40,29 @@ export function ChocolateCard({ chocolate: c }: Props) {
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-80 dark:from-black/40"
               aria-hidden
             />
+            {showQuote ? (
+              <div
+                className="pointer-events-none absolute inset-x-2 top-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100"
+                aria-hidden
+              >
+                <div className="relative flex items-center gap-2 rounded-lg border bg-popover px-2.5 py-2 text-popover-foreground shadow-md">
+                  <Image
+                    src="/churrito-logo.png"
+                    alt="Churrito"
+                    width={40}
+                    height={40}
+                    className="size-10 shrink-0 rounded-full object-cover"
+                  />
+                  <p className="my-0 flex flex-1 items-center text-xs leading-snug text-popover-foreground">
+                    {c.churrito_quote ?? CHURRITO_QUOTE_FALLBACK}
+                  </p>
+                  <span
+                    className="absolute -bottom-1.5 left-6 size-3 rotate-45 border-b border-r bg-popover"
+                    aria-hidden
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </Link>
         <div className="p-3 pb-0">

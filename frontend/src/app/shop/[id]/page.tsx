@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShop } from "@/context/shop-state";
 
+const CHURRITO_QUOTE_FALLBACK =
+  "Whatever you pick, it's a treat worth wagging for - chocolatier's honor!";
+
 export default function ProductDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
@@ -86,6 +89,27 @@ export default function ProductDetailPage() {
           ))}
         </div>
         <p className="mt-6 max-w-prose leading-relaxed text-muted-foreground">{c.description}</p>
+        <aside aria-labelledby={`churrito-quote-${c.id}`} className="mt-6 max-w-prose">
+          <h2 id={`churrito-quote-${c.id}`} className="sr-only">
+            Churrito&apos;s pick
+          </h2>
+          <div className="relative flex items-center gap-3 rounded-lg border bg-popover px-3 py-3 text-popover-foreground shadow-md">
+            <Image
+              src="/churrito-logo.png"
+              alt="Churrito mascot"
+              width={48}
+              height={48}
+              className="size-12 shrink-0 rounded-full object-cover"
+            />
+            <blockquote className="m-0 flex flex-1 items-center text-sm leading-relaxed text-popover-foreground">
+              <p className="my-0">{c.churrito_quote ?? CHURRITO_QUOTE_FALLBACK}</p>
+            </blockquote>
+            <span
+              className="absolute -bottom-1.5 left-7 size-3 rotate-45 border-b border-r bg-popover"
+              aria-hidden
+            />
+          </div>
+        </aside>
         <div className="mt-8 flex flex-wrap gap-3">
           <AddToCartControl
             chocolateId={c.id}
