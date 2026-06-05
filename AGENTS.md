@@ -51,3 +51,5 @@ If you just approved outbound domains and installs still fail with TLS errors (P
 ### Cloud VM networking
 
 First-time `make setup` / `npm install` / `apt-get install` need outbound HTTPS to package registries (PyPI, npm, Ubuntu archives) and to GitHub release assets when using `gh release download`. Git clone to `github.com` often works before those hosts are allowlisted; if `make setup` fails with SSL errors or empty `apt` candidates, add egress for `pypi.org`, `files.pythonhosted.org`, `registry.npmjs.org`, `archive.ubuntu.com`, `security.ubuntu.com`, and `release-assets.githubusercontent.com`, then re-run `make setup`.
+
+If `npm install` fails building `sqlite3` (pulled in by `@cursor/sdk`), allow `nodejs.org` for `node-gyp` headers, or run `cd frontend && npm install --no-audit --no-fund --ignore-scripts` once and retry `make setup` (Vitest/shop flows do not need the native sqlite binary).
