@@ -82,9 +82,17 @@ export default function HomePage() {
         </div>
       </section>
       <div className="md:pr-72">
-        <div className="mb-4">
-          <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
+          </div>
+          <Link
+            className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
+            href="/shop"
+          >
+            See all
+          </Link>
         </div>
         {isError ? (
           <p className="text-sm text-destructive">
@@ -102,20 +110,10 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((c) => (
-                <ChocolateCard key={c.id} chocolate={c} showQuote />
-              ))}
-            </div>
-            <div className="mt-3 flex justify-end">
-              <Link
-                className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
-                href="/shop"
-              >
-                See all
-              </Link>
-            </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((c) => (
+              <ChocolateCard key={c.id} chocolate={c} showQuote />
+            ))}
           </div>
         )}
       </div>
