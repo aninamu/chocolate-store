@@ -81,42 +81,44 @@ export default function HomePage() {
           <div className="hidden w-48 shrink-0 sm:w-60 md:block md:w-72" aria-hidden />
         </div>
       </section>
-      <div className="mb-4">
-        <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
+      <div className="md:pr-72">
+        <div className="mb-4">
+          <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
+        </div>
+        {isError ? (
+          <p className="text-sm text-destructive">
+            {(error as Error).message}{" "}
+            <Button variant="link" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </p>
+        ) : isLoading ? (
+          <div className="relative">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-80 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((c) => (
+                <ChocolateCard key={c.id} chocolate={c} showQuote />
+              ))}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Link
+                className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
+                href="/shop"
+              >
+                See all
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
-      {isError ? (
-        <p className="text-sm text-destructive">
-          {(error as Error).message}{" "}
-          <Button variant="link" onClick={() => void refetch()}>
-            Retry
-          </Button>
-        </p>
-      ) : isLoading ? (
-        <div className="relative md:pr-72">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 rounded-xl" />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="md:pr-72">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((c) => (
-              <ChocolateCard key={c.id} chocolate={c} showQuote />
-            ))}
-          </div>
-          <div className="mt-3 flex justify-end">
-            <Link
-              className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
-              href="/shop"
-            >
-              See all
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
