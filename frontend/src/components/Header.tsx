@@ -35,7 +35,7 @@ export function Header() {
             width={40}
             height={40}
             priority
-            className="size-10 shrink-0 rounded-full ring-1 ring-border/60 dark:ring-border"
+            className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border/60 dark:ring-border"
           />
           <span className="text-lg font-semibold tracking-tight">Churrito&apos;s Chocolates</span>
         </Link>
@@ -107,7 +107,7 @@ export function HomeFooter() {
             alt="Churrito's Chocolates mascot"
             width={36}
             height={36}
-            className="size-9 shrink-0 rounded-full shadow-sm ring-1 ring-border/60 dark:ring-border"
+            className="size-9 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-border/60 dark:ring-border"
           />
           <span className="max-w-md leading-relaxed">
             Free shipping on orders over $50 · Ships within 2 business days
