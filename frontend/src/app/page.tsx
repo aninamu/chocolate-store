@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { fetchChocolates } from "@/lib/api";
@@ -27,25 +28,42 @@ export default function HomePage() {
           className="pointer-events-none absolute -bottom-20 -left-12 size-56 rounded-full bg-secondary/60 blur-2xl dark:bg-secondary/30"
           aria-hidden
         />
-        <div className="relative">
-          <p className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary dark:border-primary/30 dark:bg-primary/15">
-            New spring collection
-          </p>
-          <h1 className="mt-4 max-w-3xl font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.35rem] md:leading-tight">
-            Single-origin chocolate, delivered to your door
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Small-batch bars and truffles from growers in Peru, Madagascar, and Ecuador.
-            Ethically sourced, freshly made, and shipped within 48 hours of leaving the kitchen.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              className={buttonVariants({ size: "lg", className: "min-h-10 px-5" })}
-              href="/shop"
-            >
-              Shop <ArrowRight className="ml-1 size-4" />
-            </Link>
+        <div className="relative flex flex-col items-center gap-8 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary dark:border-primary/30 dark:bg-primary/15">
+              Founded by a very good dog
+            </p>
+            <h1 className="mt-4 max-w-3xl font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.35rem] md:leading-tight">
+              Single-origin chocolate, delivered to your door
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+              Small-batch bars and truffles, hand-overseen by Churrito the Pomeranian, our
+              founder and Chief Chocolatier. Ethically sourced from growers in Peru, Madagascar,
+              and Ecuador, freshly made, and shipped within 48 hours of leaving the kitchen.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                className={buttonVariants({ size: "lg", className: "min-h-10 px-5" })}
+                href="/shop"
+              >
+                Shop <ArrowRight className="ml-1 size-4" />
+              </Link>
+              <Link
+                className={buttonVariants({ variant: "outline", size: "lg", className: "min-h-10 px-5" })}
+                href="/about"
+              >
+                Meet Churrito
+              </Link>
+            </div>
           </div>
+          <Image
+            src="/churrito-hero.png"
+            alt="Churrito the Pomeranian wearing a chocolatier's hat and apron, holding a chocolate bar and truffle"
+            width={320}
+            height={320}
+            priority
+            className="w-48 shrink-0 drop-shadow-xl sm:w-60 md:w-72"
+          />
         </div>
       </section>
       <div className="mb-4 flex items-end justify-between gap-4">

@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "chocolate store",
-  description: "Field-engineer friendly demo: browse, save, cart, and mock checkout.",
+  title: "Churrito's Chocolates",
+  description:
+    "Single-origin chocolate from the kitchen of Churrito the Pomeranian, founder and Chief Chocolatier.",
 };
 
 export default function RootLayout({

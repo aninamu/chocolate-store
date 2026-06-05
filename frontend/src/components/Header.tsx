@@ -1,6 +1,7 @@
 "use client";
 
-import { Heart, Menu, Package, ShoppingCart } from "lucide-react";
+import { Heart, Menu, ShoppingCart } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -10,6 +11,7 @@ import { useShop } from "@/context/shop-state";
 
 const links = [
   { href: "/shop", label: "Shop" },
+  { href: "/about", label: "About" },
   { href: "/saved", label: "Saved" },
   { href: "/cart", label: "Cart" },
 ];
@@ -25,12 +27,17 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
+          className="flex items-center gap-2.5 font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
         >
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest text-primary dark:bg-primary/20">
-            Est. 2024
-          </span>
-          <span className="text-lg font-semibold tracking-tight">Chocolate Store</span>
+          <Image
+            src="/churrito-logo.png"
+            alt="Churrito the Pomeranian, founder of Churrito's Chocolates"
+            width={40}
+            height={40}
+            priority
+            className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border/60 dark:ring-border"
+          />
+          <span className="text-lg font-semibold tracking-tight">Churrito&apos;s Chocolates</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
@@ -95,9 +102,13 @@ export function HomeFooter() {
     <footer className="mt-20 border-t border-border/70 bg-muted/30 py-10 text-sm text-muted-foreground dark:bg-muted/15">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/60 dark:ring-border">
-            <Package className="size-4" />
-          </span>
+          <Image
+            src="/churrito-logo.png"
+            alt="Churrito's Chocolates mascot"
+            width={36}
+            height={36}
+            className="size-9 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-border/60 dark:ring-border"
+          />
           <span className="max-w-md leading-relaxed">
             Free shipping on orders over $50 · Ships within 2 business days
           </span>
@@ -107,7 +118,7 @@ export function HomeFooter() {
             <Heart className="size-4" />
           </span>
           <span className="max-w-md leading-relaxed">
-            Handcrafted in small batches · © {new Date().getFullYear()} Chocolate Store
+            Handcrafted in small batches · © {new Date().getFullYear()} Churrito&apos;s Chocolates
           </span>
         </p>
       </div>
