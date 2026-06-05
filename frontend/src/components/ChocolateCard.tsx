@@ -41,7 +41,10 @@ export function ChocolateCard({ chocolate: c, showQuote = false }: Props) {
               aria-hidden
             />
             {showQuote ? (
-              <div className="pointer-events-none absolute inset-x-2 top-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+              <div
+                className="pointer-events-none absolute inset-x-2 top-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100"
+                aria-hidden
+              >
                 <div className="relative flex items-center gap-2 rounded-lg border bg-popover px-2.5 py-2 text-popover-foreground shadow-md">
                   <Image
                     src="/churrito-logo.png"
