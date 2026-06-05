@@ -121,12 +121,12 @@ export default function AboutPage() {
           {timeline.map((item) => (
             <li
               key={item.year}
-              className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-5 shadow-sm sm:flex-row sm:gap-5"
+              className="grid grid-cols-1 gap-2 rounded-xl border border-border/70 bg-card p-5 shadow-sm sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:gap-x-5"
             >
-              <span className="shrink-0 font-heading text-lg font-semibold text-primary">
+              <span className="font-heading text-lg font-semibold text-primary sm:whitespace-nowrap">
                 {item.year}
               </span>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-semibold tracking-tight text-foreground">{item.title}</h3>
                 <p className="mt-1 leading-relaxed text-muted-foreground">{item.body}</p>
               </div>

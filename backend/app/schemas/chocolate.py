@@ -14,6 +14,7 @@ class ChocolateOut(BaseModel):
     cacao_percentage: Optional[int] = None
     price_cents: int
     image_url: str
+    churrito_quote: Optional[str] = None
     tags: List[str]
     in_stock: bool
     created_at: datetime

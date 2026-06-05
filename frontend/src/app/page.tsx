@@ -15,7 +15,7 @@ export default function HomePage() {
     queryKey: ["chocolates", "all"],
     queryFn: () => fetchChocolates(),
   });
-  const featured = data?.slice(0, 4) ?? [];
+  const featured = data?.slice(0, 3) ?? [];
 
   return (
     <div className="relative">
@@ -81,17 +81,9 @@ export default function HomePage() {
           <div className="hidden w-48 shrink-0 sm:w-60 md:block md:w-72" aria-hidden />
         </div>
       </section>
-      <div className="mb-4 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
-        </div>
-        <Link
-          className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
-          href="/shop"
-        >
-          See all
-        </Link>
+      <div className="mb-4">
+        <h2 className="font-heading text-xl font-semibold tracking-tight">Featured</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Staff picks from this week&apos;s kitchen</p>
       </div>
       {isError ? (
         <p className="text-sm text-destructive">
@@ -101,16 +93,28 @@ export default function HomePage() {
           </Button>
         </p>
       ) : isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 rounded-xl" />
-          ))}
+        <div className="relative md:pr-72">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-80 rounded-xl" />
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((c) => (
-            <ChocolateCard key={c.id} chocolate={c} />
-          ))}
+        <div className="md:pr-72">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((c) => (
+              <ChocolateCard key={c.id} chocolate={c} showQuote />
+            ))}
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Link
+              className={buttonVariants({ variant: "link", className: "h-auto p-0" })}
+              href="/shop"
+            >
+              See all
+            </Link>
+          </div>
         </div>
       )}
     </div>

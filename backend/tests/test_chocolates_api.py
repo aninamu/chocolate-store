@@ -13,6 +13,8 @@ def test_list_chocolates_returns_items(api_client: TestClient) -> None:
     assert len(items) >= 1
     first = items[0]
     assert "id" in first and "name" in first and "price_cents" in first
+    assert "churrito_quote" in first
+    assert first["churrito_quote"]
 
 
 def test_list_chocolates_tag_filter_or_semantics(api_client: TestClient) -> None:
@@ -42,6 +44,8 @@ def test_get_chocolate_detail_and_404(api_client: TestClient) -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["id"] == cid
+    assert "churrito_quote" in body
+    assert body["churrito_quote"]
 
     missing = api_client.get(f"/api/chocolates/{uuid.uuid4()}")
     assert missing.status_code == 404

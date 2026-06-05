@@ -24,6 +24,7 @@ class Chocolate(Base):
     cacao_percentage: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     image_url: Mapped[str] = mapped_column(String(2000), nullable=False)
+    churrito_quote: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     tags: Mapped[List[str]] = mapped_column(
         ARRAY(String(64)), server_default=text("'{}'")
     )
