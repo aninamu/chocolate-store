@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 
+const HEART_MASK =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E\")";
+
+const heartMaskStyle = {
+  maskImage: HEART_MASK,
+  WebkitMaskImage: HEART_MASK,
+  maskRepeat: "no-repeat",
+  WebkitMaskRepeat: "no-repeat",
+  maskPosition: "center",
+  WebkitMaskPosition: "center",
+  maskSize: "contain",
+  WebkitMaskSize: "contain",
+} as const;
+
 export const metadata: Metadata = {
   title: "About — Churrito's Chocolates",
   description:
@@ -9,25 +23,25 @@ export const metadata: Metadata = {
 
 const timeline = [
   {
-    year: "2019",
+    year: "Sept 28, 2024",
     title: "A star is born (small, very fluffy)",
     body:
       "Churrito Burrito Dorito Mu enters the world weighing slightly less than a single chocolate truffle. Vets describe him as \"alarmingly photogenic.\"",
   },
   {
-    year: "2021",
+    year: "Early 2025",
     title: "First taste of destiny",
     body:
       "After a fateful encounter with a fallen cocoa nib, Churrito refuses all kibble until presented with single-origin chocolate. A legend, and a very particular palate, are born.",
   },
   {
-    year: "2024",
+    year: "Late 2025",
     title: "Founds Churrito's Chocolates",
     body:
       "Armed with a tiny chef's hat and an unshakeable vision, Churrito establishes the company, personally sniff-approving every bean shipment.",
   },
   {
-    year: "2025",
+    year: "2026",
     title: "The Nobel Paws Prize",
     body:
       "Awarded the prestigious Nobel Paws Prize for \"outstanding contributions to the science of joy,\" Churrito accepts the medal with three polite tail wags.",
@@ -58,17 +72,26 @@ export default function AboutPage() {
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               Pomeranian. Visionary. Nobel Paws laureate. The fluffy heart behind every bar and
               truffle at Churrito&apos;s Chocolates. He cannot legally taste chocolate, so he
-              supervises with his nose — and his standards are impossibly high.
+              supervises with his nose — and his standards are impossibly high. He refuses to cut
+              corners, only to paws for dramatic effect.
             </p>
           </div>
-          <Image
-            src="/churrito-hero.png"
-            alt="Churrito the Pomeranian in a chocolatier's hat and apron, holding a chocolate bar and a truffle"
-            width={360}
-            height={360}
-            priority
-            className="w-52 shrink-0 drop-shadow-xl sm:w-64 md:w-80"
-          />
+          <div className="relative flex shrink-0 items-center justify-center">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute aspect-square w-56 bg-primary sm:w-[17.5rem] md:w-[21rem]"
+              style={heartMaskStyle}
+            />
+            <Image
+              src="/churrito-hero.png"
+              alt="Churrito the Pomeranian in a chocolatier's hat and apron, holding a chocolate bar and a truffle"
+              width={360}
+              height={360}
+              priority
+              className="relative aspect-square w-52 object-cover drop-shadow-xl sm:w-64 md:w-80"
+              style={heartMaskStyle}
+            />
+          </div>
         </div>
       </section>
 
