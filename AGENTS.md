@@ -47,3 +47,7 @@ If you just approved outbound domains and installs still fail with TLS errors (P
 - Redis gracefully degrades — the backend still works without it (no caching).
 - The `.env` file is auto-created from `.env.example` on first bootstrap. Ports are non-standard (55432, 63790) to avoid collisions with system services.
 - `make stop` is a hard teardown if `Ctrl-C` didn't clean up properly.
+
+### Cloud VM networking
+
+First-time `make setup` / `npm install` / `apt-get install` need outbound HTTPS to package registries (PyPI, npm, Ubuntu archives) and to GitHub release assets when using `gh release download`. Git clone to `github.com` often works before those hosts are allowlisted; if `make setup` fails with SSL errors or empty `apt` candidates, add egress for `pypi.org`, `files.pythonhosted.org`, `registry.npmjs.org`, `archive.ubuntu.com`, `security.ubuntu.com`, and `release-assets.githubusercontent.com`, then re-run `make setup`.
