@@ -18,7 +18,29 @@ export default function HomePage() {
   const featured = data?.slice(0, 4) ?? [];
 
   return (
-    <div>
+    <div className="relative">
+      <aside className="mb-8 flex justify-center md:hidden">
+        <Image
+          src="/churrito-hero.png"
+          alt="Churrito the Pomeranian wearing a chocolatier's hat and apron, holding a chocolate bar and truffle"
+          width={320}
+          height={320}
+          priority
+          className="w-48 drop-shadow-xl sm:w-60"
+        />
+      </aside>
+      <aside className="pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-72 md:block">
+        <div className="sticky top-20 flex justify-center pt-16 sm:pt-20">
+          <Image
+            src="/churrito-hero.png"
+            alt="Churrito the Pomeranian wearing a chocolatier's hat and apron, holding a chocolate bar and truffle"
+            width={320}
+            height={320}
+            priority
+            className="pointer-events-auto w-72 drop-shadow-xl"
+          />
+        </div>
+      </aside>
       <section className="relative mb-12 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-accent/30 p-8 shadow-md ring-1 ring-black/[0.04] dark:from-card dark:via-card dark:to-primary/10 dark:ring-white/[0.06] sm:p-10">
         <div
           className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/10 blur-3xl dark:bg-primary/20"
@@ -56,14 +78,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <Image
-            src="/churrito-hero.png"
-            alt="Churrito the Pomeranian wearing a chocolatier's hat and apron, holding a chocolate bar and truffle"
-            width={320}
-            height={320}
-            priority
-            className="w-48 shrink-0 drop-shadow-xl sm:w-60 md:w-72"
-          />
+          <div className="hidden w-48 shrink-0 sm:w-60 md:block md:w-72" aria-hidden />
         </div>
       </section>
       <div className="mb-4 flex items-end justify-between gap-4">
