@@ -53,3 +53,9 @@ If you just approved outbound domains and installs still fail with TLS errors (P
 First-time `make setup` / `npm install` / `apt-get install` need outbound HTTPS to package registries (PyPI, npm, Ubuntu archives) and to GitHub release assets when using `gh release download`. Git clone to `github.com` often works before those hosts are allowlisted; if `make setup` fails with SSL errors or empty `apt` candidates, add egress for `pypi.org`, `files.pythonhosted.org`, `registry.npmjs.org`, `archive.ubuntu.com`, `security.ubuntu.com`, and `release-assets.githubusercontent.com`, then re-run `make setup`.
 
 If `npm install` fails building `sqlite3` (pulled in by `@cursor/sdk`), allow `nodejs.org` for `node-gyp` headers, or run `cd frontend && npm install --no-audit --no-fund --ignore-scripts` once and retry `make setup` (Vitest/shop flows do not need the native sqlite binary).
+
+### When package-registry egress is denied
+
+`github.com` git clones may still work, but **full bootstrap is not supported** without apt (Postgres 16, `python3.12-venv`, `redis-server` packages), PyPI (`pip install -e backend[dev]`), and npm (`frontend` dependencies). Expect `make setup` to fail at `initdb` and/or registry installs.
+
+**Partial workaround (Redis only):** clone [redis](https://github.com/redis/redis), run `make` in `src/`, put `redis-server` and `redis-cli` on `PATH` (for example `/workspace/.local/bin`), ensure `.env` exists, and start Redis on `REDIS_PORT` using the same flags as `scripts/services-up.sh`. Postgres, the FastAPI app, and the Next.js app still require apt/registry egress.
