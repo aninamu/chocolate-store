@@ -31,6 +31,16 @@ describe("fetchChocolates", () => {
     expect(url).toContain("tag=milk");
   });
 
+  it("appends available=true when available filter is enabled", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+
+    await fetchChocolates({ available: true });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain("available=true");
+  });
+
   it("sends one tag param for a single selected tag", async () => {
     const fetchMock = vi.mocked(globalThis.fetch);
     vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
