@@ -230,9 +230,11 @@ function ShopContent() {
   const sp = useSearchParams();
   const tagQ = sp.getAll("tag").map((s) => s.trim()).filter(Boolean);
   const sortQ = (sp.get("sort") as string) || "name";
+  const availableQ = sp.get("available") === "true";
 
   const [selectedTags, setSelectedTags] = useState<string[]>(tagQ);
   const [sort, setSort] = useState(sortQ);
+  const [hideOutOfStock, setHideOutOfStock] = useState(availableQ);
 
   useEffect(() => {
     setSelectedTags(
@@ -241,6 +243,7 @@ function ShopContent() {
         .filter(Boolean)
     );
     setSort((sp.get("sort") as string) || "name");
+    setHideOutOfStock(sp.get("available") === "true");
   }, [sp]);
 
   const { data: catalogForTags, isPending: tagsCatalogPending } = useQuery({
@@ -257,11 +260,15 @@ function ShopContent() {
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", { tags: tagQ.slice().sort(), sort: sortQ }],
+    queryKey: [
+      "chocolates",
+      { tags: tagQ.slice().sort(), sort: sortQ, available: availableQ },
+    ],
     queryFn: () =>
       fetchChocolates({
         tags: tagQ.length ? tagQ : undefined,
         sort: sortQ,
+        available: availableQ || undefined,
       }),
   });
 
@@ -269,9 +276,10 @@ function ShopContent() {
     const p = new URLSearchParams();
     for (const t of selectedTags) p.append("tag", t);
     if (sort) p.set("sort", sort);
+    if (hideOutOfStock) p.set("available", "true");
     const qs = p.toString();
     router.push(qs ? `/shop?${qs}` : "/shop");
-  }, [selectedTags, sort, router]);
+  }, [selectedTags, sort, hideOutOfStock, router]);
 
   const toggleTag = useCallback((t: string) => {
     setSelectedTags((prev) =>
@@ -317,6 +325,18 @@ function ShopContent() {
               </option>
             ))}
           </select>
+        </div>
+        <div className="flex h-9 items-center gap-2 sm:shrink-0 sm:self-end">
+          <input
+            id="hide-out-of-stock"
+            type="checkbox"
+            className="size-3.5 shrink-0 rounded border border-input accent-primary"
+            checked={hideOutOfStock}
+            onChange={(e) => setHideOutOfStock(e.target.checked)}
+          />
+          <Label htmlFor="hide-out-of-stock" className="cursor-pointer font-normal">
+            Hide out of stock
+          </Label>
         </div>
         <Button
           type="button"
