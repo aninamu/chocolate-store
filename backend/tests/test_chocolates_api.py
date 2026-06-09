@@ -27,6 +27,15 @@ def test_list_chocolates_tag_filter_or_semantics(api_client: TestClient) -> None
         assert "dark" in tags or "milk" in tags
 
 
+def test_list_chocolates_available_filter(api_client: TestClient) -> None:
+    r = api_client.get("/api/chocolates", params={"available": "true"})
+    assert r.status_code == 200
+    items = r.json()
+    assert isinstance(items, list)
+    for row in items:
+        assert row.get("in_stock") is True
+
+
 def test_list_chocolates_sort_price_asc(api_client: TestClient) -> None:
     r = api_client.get("/api/chocolates", params={"sort": "price_asc"})
     assert r.status_code == 200
