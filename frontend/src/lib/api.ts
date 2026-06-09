@@ -5,6 +5,7 @@ const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 export async function fetchChocolates(params?: {
   tags?: string[];
   sort?: string;
+  available?: boolean;
 }): Promise<Chocolate[]> {
   const u = new URL("/api/chocolates", base());
   if (params?.tags?.length) {
@@ -13,6 +14,7 @@ export async function fetchChocolates(params?: {
     }
   }
   if (params?.sort) u.searchParams.set("sort", params.sort);
+  if (params?.available) u.searchParams.set("available", "true");
   const res = await fetch(u.toString(), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load chocolates");
   return res.json() as Promise<Chocolate[]>;
