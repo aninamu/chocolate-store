@@ -30,8 +30,16 @@ frontend/coverage/
 !.cursor/rules/
 .cursor/rules/*
 !.cursor/rules/plan-before-building.mdc
+!.cursor/hooks.json
+!.cursor/hooks/
+.cursor/hooks/*
+!.cursor/hooks/pre-commit-review.sh
+!.cursor/hooks/review-local-changes-worker.sh
 !.cursor/skills/
 .cursor/skills/*
 !.cursor/skills/sync-seed-with-schema/
 .cursor/skills/sync-seed-with-schema/*
 !.cursor/skills/sync-seed-with-schema/SKILL.md
+!.cursor/skills/review-local-changes/
+.cursor/skills/review-local-changes/*
+!.cursor/skills/review-local-changes/SKILL.md
