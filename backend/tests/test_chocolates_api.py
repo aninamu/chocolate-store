@@ -1,8 +1,30 @@
 from __future__ import annotations
 
+import os
 import uuid
 
+from sqlalchemy import create_engine, text
 from starlette.testclient import TestClient
+
+from app.routers.chocolates import _list_cache_key
+
+
+def _sync_engine():
+    raw = os.environ["DATABASE_URL"]
+    sync_url = raw.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+    return create_engine(sync_url)
+
+
+def _set_in_stock_sync(cid: uuid.UUID, in_stock: bool) -> None:
+    eng = _sync_engine()
+    try:
+        with eng.begin() as conn:
+            conn.execute(
+                text("UPDATE chocolates SET in_stock = :flag WHERE id = :cid"),
+                {"flag": in_stock, "cid": cid},
+            )
+    finally:
+        eng.dispose()
 
 
 def test_list_chocolates_returns_items(api_client: TestClient) -> None:
@@ -34,6 +56,49 @@ def test_list_chocolates_available_filter(api_client: TestClient) -> None:
     assert isinstance(items, list)
     for row in items:
         assert row["in_stock"] is True
+
+
+def test_list_cache_key_distinguishes_available_filter() -> None:
+    unfiltered = _list_cache_key(None, "name", None)
+    in_stock_only = _list_cache_key(None, "name", True)
+    assert unfiltered != in_stock_only
+    assert unfiltered.endswith(":all")
+    assert in_stock_only.endswith(":in_stock")
+
+
+def test_list_chocolates_available_uses_separate_list_cache(
+    api_client: TestClient,
+) -> None:
+    """Regression: list Redis keys must include available or caches cross-contaminate."""
+    listed = api_client.get("/api/chocolates")
+    assert listed.status_code == 200
+    cid = uuid.UUID(listed.json()[0]["id"])
+    _set_in_stock_sync(cid, False)
+    try:
+        unfiltered_first = api_client.get("/api/chocolates")
+        assert unfiltered_first.status_code == 200
+        assert any(row["id"] == str(cid) for row in unfiltered_first.json())
+
+        available_after_unfiltered = api_client.get(
+            "/api/chocolates", params={"available": "true"}
+        )
+        assert available_after_unfiltered.status_code == 200
+        available_rows = available_after_unfiltered.json()
+        assert all(row["in_stock"] for row in available_rows)
+        assert not any(row["id"] == str(cid) for row in available_rows)
+
+        available_first = api_client.get(
+            "/api/chocolates", params={"available": "true"}
+        )
+        assert available_first.status_code == 200
+
+        unfiltered_after_available = api_client.get("/api/chocolates")
+        assert unfiltered_after_available.status_code == 200
+        assert any(
+            row["id"] == str(cid) for row in unfiltered_after_available.json()
+        )
+    finally:
+        _set_in_stock_sync(cid, True)
 
 
 def test_list_chocolates_sort_price_asc(api_client: TestClient) -> None:
