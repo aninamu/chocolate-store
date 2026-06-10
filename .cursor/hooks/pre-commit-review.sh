@@ -2,13 +2,18 @@
 # beforeShellExecution hook: snapshot pre-commit diff, spawn background review, allow commit.
 set -euo pipefail
 
-input=$(cat)
-command=$(echo "$input" | jq -r '.command // empty')
-cwd=$(echo "$input" | jq -r '.cwd // empty')
-
+_allowed=
 allow() {
-  echo '{"permission":"allow"}'
+  if [[ -z "${_allowed:-}" ]]; then
+    echo '{"permission":"allow"}'
+    _allowed=1
+  fi
 }
+trap 'allow' EXIT
+
+input=$(cat)
+command=$(echo "$input" | jq -r '.command // empty' 2>/dev/null || true)
+cwd=$(echo "$input" | jq -r '.cwd // empty' 2>/dev/null || true)
 
 if ! echo "$command" | grep -qE 'git(\s+-C\s+\S+)?\s+commit(\s|$)'; then
   allow
@@ -34,16 +39,13 @@ fi
 
 run_dir="$repo_root/.data/review-runs"
 mkdir -p "$run_dir"
-timestamp=$(date +%Y%m%dT%H%M%S)
+timestamp=$(date +%Y%m%dT%H%M%S)-$$
 diff_file="$run_dir/pre-commit-$timestamp.patch"
 
-if echo "$command" | grep -qE '\s(-a|--all)(\s|$)'; then
-  git -C "$repo_root" diff HEAD >"$diff_file"
-else
-  git -C "$repo_root" diff --cached >"$diff_file"
-fi
+printf '%s' "$diff_content" >"$diff_file"
 
-branch=$(git -C "$repo_root" branch --show-current 2>/dev/null || echo "unknown")
+branch=$(git -C "$repo_root" branch --show-current 2>/dev/null || true)
+[[ -z "$branch" ]] && branch=unknown
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 worker="$hook_dir/review-local-changes-worker.sh"
 
