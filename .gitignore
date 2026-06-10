@@ -18,6 +18,7 @@ frontend/coverage/
 .DS_Store
 # Ignore local Cursor project state; allow selected commands to be versioned.
 .cursor/*
+!.cursor/BUGBOT.md
 !.cursor/agents/
 .cursor/agents/*
 !.cursor/agents/backend-security-scanner.md
