@@ -22,14 +22,10 @@ fi
 : "${REDIS_PORT:=63790}"
 
 # Drop the app DB so nothing persists between runs (demo app).
-if [ -f .data/mongo/mongod.pid ] 2>/dev/null; then
-  pid="$(cat .data/mongo/mongod.pid 2>/dev/null || true)"
-  if [ -n "${pid}" ] && kill -0 "$pid" 2>/dev/null; then
-    mongosh --quiet "mongodb://127.0.0.1:$MONGO_PORT/$MONGO_DB" \
-      --eval "db.dropDatabase()" >/dev/null 2>&1 || true
-    mongosh --quiet "mongodb://127.0.0.1:$MONGO_PORT/admin" \
-      --eval "db.shutdownServer()" >/dev/null 2>&1 || true
-  fi
+if [ -d .data/mongo ]; then
+  mongosh --quiet "mongodb://127.0.0.1:$MONGO_PORT/$MONGO_DB" \
+    --eval "db.dropDatabase()" >/dev/null 2>&1 || true
+  mongod --dbpath .data/mongo --shutdown >/dev/null 2>&1 || true
   rm -f .data/mongo/mongod.pid 2>/dev/null || true
 fi
 
