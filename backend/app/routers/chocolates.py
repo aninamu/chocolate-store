@@ -4,13 +4,9 @@ import json
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import Select, String, asc, desc, literal, select
-from sqlalchemy.dialects.postgresql import array
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Query
 
 from app.config import settings
-from app.db import get_db
 from app.cache import cache_get, cache_set
 from app.models.chocolate import Chocolate
 from app.schemas.chocolate import ChocolateOut
@@ -37,6 +33,23 @@ def _detail_cache_key(cid: UUID) -> str:
     return f"chocolates:id:{cid}"
 
 
+def _sort_chocolates(rows: list[Chocolate], sort_key: str) -> list[Chocolate]:
+    if sort_key == "price_asc":
+        return sorted(rows, key=lambda c: (c.price_cents, c.name))
+    if sort_key == "price_desc":
+        return sorted(rows, key=lambda c: (-c.price_cents, c.name))
+    if sort_key == "cacao_desc":
+        return sorted(
+            rows,
+            key=lambda c: (
+                c.cacao_percentage is None,
+                -(c.cacao_percentage or 0),
+                c.name,
+            ),
+        )
+    return sorted(rows, key=lambda c: c.name)
+
+
 @router.get("", response_model=list[ChocolateOut])
 async def list_chocolates(
     tag: list[str] = Query(
@@ -47,7 +60,6 @@ async def list_chocolates(
         "name",
         description="name | price_asc | price_desc | cacao_desc",
     ),
-    session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:
     key = _list_cache_key(tag, sort)
     raw = await cache_get(key)
@@ -59,25 +71,13 @@ async def list_chocolates(
             log.debug("cache miss parse %s: %s", key, e)
 
     cleaned = [t.strip() for t in (tag or []) if t and t.strip()]
-    stmt: Select[tuple[Chocolate]] = select(Chocolate)
     if cleaned:
-        literals = [literal(s, type_=String(64)) for s in cleaned]
-        any_of = array(literals)
-        stmt = stmt.where(Chocolate.tags.op("&&")(any_of))
-    s = _normalize_sort_key(sort)
-    if s == "price_asc":
-        stmt = stmt.order_by(asc(Chocolate.price_cents), asc(Chocolate.name))
-    elif s == "price_desc":
-        stmt = stmt.order_by(desc(Chocolate.price_cents), asc(Chocolate.name))
-    elif s == "cacao_desc":
-        stmt = stmt.order_by(
-            desc(Chocolate.cacao_percentage).nulls_last(), asc(Chocolate.name)
-        )
+        rows = await Chocolate.find({"tags": {"$in": cleaned}}).to_list()
     else:
-        stmt = stmt.order_by(asc(Chocolate.name))
+        rows = await Chocolate.find_all().to_list()
 
-    result = await session.execute(stmt)
-    rows = result.scalars().all()
+    sort_key = _normalize_sort_key(sort)
+    rows = _sort_chocolates(rows, sort_key)
     out = [ChocolateOut.model_validate(r) for r in rows]
     await cache_set(
         key,
@@ -88,10 +88,7 @@ async def list_chocolates(
 
 
 @router.get("/{chocolate_id}", response_model=ChocolateOut)
-async def get_chocolate(
-    chocolate_id: UUID,
-    session: AsyncSession = Depends(get_db),
-) -> ChocolateOut:
+async def get_chocolate(chocolate_id: UUID) -> ChocolateOut:
     key = _detail_cache_key(chocolate_id)
     raw = await cache_get(key)
     if raw:
@@ -100,8 +97,7 @@ async def get_chocolate(
         except (json.JSONDecodeError, ValueError) as e:
             log.debug("detail cache miss %s: %s", key, e)
 
-    result = await session.execute(select(Chocolate).where(Chocolate.id == chocolate_id))
-    row = result.scalar_one_or_none()
+    row = await Chocolate.get(chocolate_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Chocolate not found")
     out = ChocolateOut.model_validate(row)

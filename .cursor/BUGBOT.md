@@ -1,6 +1,6 @@
 # Bugbot review guide — chocolate-store
 
-This repo is a demo marketplace: **Next.js 15 + FastAPI + Postgres + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
+This repo is a demo marketplace: **Next.js 15 + FastAPI + MongoDB + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
 
 Use this file to tune PR reviews. Focus on **real bugs and regressions**, not style nitpicks.
 

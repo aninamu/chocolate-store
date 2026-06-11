@@ -24,7 +24,7 @@ function SuccessInner() {
       <p className="mt-3 leading-relaxed text-muted-foreground">
         Your mock order is in the database. You can query it with{" "}
         <code className="rounded-md border border-border/60 bg-muted/80 px-1.5 py-0.5 text-sm font-medium text-foreground dark:bg-muted/50">
-          make psql
+          make mongosh
         </code>{" "}
         from the repo root.
       </p>
