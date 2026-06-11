@@ -27,10 +27,13 @@ def _normalize_sort_key(sort: str | None) -> str:
     return "name"
 
 
-def _list_cache_key(tag: list[str] | None, sort: str | None) -> str:
+def _list_cache_key(
+    tag: list[str] | None, sort: str | None, available: bool | None = None
+) -> str:
     t = tag or []
     tkey = ",".join(sorted(x.strip() for x in t if x and x.strip()))
-    return f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}"
+    avail = "1" if available else "0"
+    return f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}:{avail}"
 
 
 def _detail_cache_key(cid: UUID) -> str:
@@ -47,9 +50,12 @@ async def list_chocolates(
         "name",
         description="name | price_asc | price_desc | cacao_desc",
     ),
+    available: bool | None = Query(
+        None, description="If true, only in-stock chocolates"
+    ),
     session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:
-    key = _list_cache_key(tag, sort)
+    key = _list_cache_key(tag, sort, available)
     raw = await cache_get(key)
     if raw:
         try:
@@ -64,6 +70,8 @@ async def list_chocolates(
         literals = [literal(s, type_=String(64)) for s in cleaned]
         any_of = array(literals)
         stmt = stmt.where(Chocolate.tags.op("&&")(any_of))
+    if available:
+        stmt = stmt.where(Chocolate.in_stock)
     s = _normalize_sort_key(sort)
     if s == "price_asc":
         stmt = stmt.order_by(asc(Chocolate.price_cents), asc(Chocolate.name))
