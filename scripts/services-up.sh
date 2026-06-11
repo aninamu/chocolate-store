@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Start user-level Postgres + Redis, then (re)create a fresh app database from
-# SQLAlchemy models and load seed data. No migrations — the DB is disposable.
+# Start user-level MongoDB + Redis, then wipe the app database and load seed data.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 # shellcheck source=/dev/null
-source "$ROOT/scripts/postgres-path.sh"
+source "$ROOT/scripts/mongo-path.sh"
 
-add_postgres_bin_to_path
+add_mongo_bin_to_path
 
 if [ -f .env ]; then
   set -a
@@ -21,32 +20,29 @@ else
   exit 1
 fi
 
-: "${PG_PORT:=55432}"
-: "${PG_USER:=chocolate}"
-: "${PG_DB:=chocolate_store}"
+: "${MONGO_PORT:=27018}"
+: "${MONGO_DB:=chocolate_store}"
 : "${REDIS_PORT:=63790}"
 
-export PGPORT="$PG_PORT"
-export PGUSER="$PG_USER"
-export PGPASSWORD="${PGPASSWORD:-}"
+mkdir -p .data/mongo .data/redis logs
 
-mkdir -p .data/postgres .data/redis logs
+_mongo_running() {
+  if [ -f .data/mongo/mongod.pid ]; then
+    pid="$(cat .data/mongo/mongod.pid 2>/dev/null || true)"
+    if [ -n "${pid}" ] && kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  return 1
+}
 
-# ---- Postgres
-if [ ! -s .data/postgres/PG_VERSION ]; then
-  initdb -D .data/postgres -U "$PG_USER" --auth=trust --encoding=UTF8
+# ---- MongoDB
+if ! _mongo_running; then
+  rm -f .data/mongo/mongod.lock 2>/dev/null || true
+  mongod --dbpath .data/mongo --port "$MONGO_PORT" --bind_ip 127.0.0.1 \
+    --logpath "$ROOT/logs/mongo.log" --pidfilepath .data/mongo/mongod.pid --fork
 fi
-
-PG_SOCKET_DIR="$ROOT/.data/postgres"
-if ! pg_ctl -D .data/postgres status >/dev/null 2>&1; then
-  # Keep Unix sockets inside the project data dir so unprivileged Linux setups
-  # do not need write access to /var/run/postgresql.
-  # Use -k . (relative to the data directory) so pg_ctl's whitespace split of -o
-  # does not break if $ROOT contains spaces.
-  pg_ctl -D .data/postgres -l logs/postgres.log \
-    -o "-p $PG_PORT -h 127.0.0.1 -k \"$PG_SOCKET_DIR\"" start
-fi
-until pg_isready -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -q 2>/dev/null; do
+until mongosh --quiet "mongodb://127.0.0.1:$MONGO_PORT/admin" --eval "db.adminCommand('ping').ok" 2>/dev/null | grep -q 1; do
   sleep 0.2
 done
 
@@ -70,15 +66,14 @@ until redis-cli -p "$REDIS_PORT" ping 2>/dev/null | grep -q PONG; do
   sleep 0.1
 done
 
-# ---- Fresh app DB every startup (no migrations; schema comes from SQLAlchemy models)
-psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
-  -c "DROP DATABASE IF EXISTS \"$PG_DB\";" \
-  -c "CREATE DATABASE \"$PG_DB\";"
+# ---- Fresh app DB every startup (no migrations; documents come from Beanie models)
+mongosh --quiet "mongodb://127.0.0.1:$MONGO_PORT/$MONGO_DB" \
+  --eval "db.dropDatabase()" >/dev/null
 
 # Flush stale cache entries that reference chocolates from a previous run
 redis-cli -p "$REDIS_PORT" FLUSHALL >/dev/null
 
-# Create schema from models and insert seed rows
+# Insert seed rows
 ( cd "$ROOT/backend" && .venv/bin/python -m app.init_db )
 
 echo "services-up: ok"

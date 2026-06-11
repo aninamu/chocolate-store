@@ -6,7 +6,7 @@ Environment variables are loaded from the repo root `.env` (see `../.env.example
 
 ## Tests
 
-From the repo root, after `make setup` and with Postgres/Redis up (`make services-up`):
+From the repo root, after `make setup` and with MongoDB/Redis up (`make services-up`):
 
 ```bash
 make test-backend

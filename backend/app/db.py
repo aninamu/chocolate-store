@@ -1,26 +1,32 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.config import settings
+from app.models.chocolate import Chocolate, Order
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=False,
-    pool_pre_ping=True,
-)
-
-AsyncSessionFactory = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
+_client: AsyncIOMotorClient | None = None
 
 
-async def get_db() -> AsyncIterator[AsyncSession]:
-    async with AsyncSessionFactory() as session:
-        yield session
+async def init_mongodb() -> None:
+    global _client
+    from beanie import init_beanie
+
+    _client = AsyncIOMotorClient(settings.mongodb_url)
+    await init_beanie(
+        database=_client.get_default_database(),
+        document_models=[Chocolate, Order],
+    )
+
+
+async def close_mongodb() -> None:
+    global _client
+    if _client is not None:
+        _client.close()
+        _client = None
+
+
+def get_motor_client() -> AsyncIOMotorClient:
+    if _client is None:
+        raise RuntimeError("MongoDB is not initialized")
+    return _client

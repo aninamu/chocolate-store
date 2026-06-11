@@ -1,28 +1,29 @@
 from __future__ import annotations
 
-import os
+import asyncio
 import uuid
 
-from sqlalchemy import create_engine, text
 from starlette.testclient import TestClient
 
 
-def _sync_engine():
-    raw = os.environ["DATABASE_URL"]
-    sync_url = raw.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
-    return create_engine(sync_url)
+async def _set_in_stock_async(cid: uuid.UUID, in_stock: bool) -> None:
+    import os
 
+    from motor.motor_asyncio import AsyncIOMotorClient
 
-def _set_in_stock_sync(cid: uuid.UUID, in_stock: bool) -> None:
-    eng = _sync_engine()
+    client = AsyncIOMotorClient(os.environ["MONGODB_URL"])
     try:
-        with eng.begin() as conn:
-            conn.execute(
-                text("UPDATE chocolates SET in_stock = :flag WHERE id = :cid"),
-                {"flag": in_stock, "cid": cid},
-            )
+        db = client.get_default_database()
+        await db["chocolates"].update_one(
+            {"_id": cid},
+            {"$set": {"in_stock": in_stock}},
+        )
     finally:
-        eng.dispose()
+        client.close()
+
+
+def _set_in_stock(cid: uuid.UUID, in_stock: bool) -> None:
+    asyncio.run(_set_in_stock_async(cid, in_stock))
 
 
 def test_checkout_success(api_client: TestClient) -> None:
@@ -60,7 +61,7 @@ def test_checkout_out_of_stock(api_client: TestClient) -> None:
     ch = listed.json()[0]
     cid = uuid.UUID(str(ch["id"]))
 
-    _set_in_stock_sync(cid, False)
+    _set_in_stock(cid, False)
     try:
         payload = {
             "customer_name": "Test User",
@@ -72,4 +73,4 @@ def test_checkout_out_of_stock(api_client: TestClient) -> None:
         detail = (r.json().get("detail") or "").lower()
         assert "stock" in detail
     finally:
-        _set_in_stock_sync(cid, True)
+        _set_in_stock(cid, True)
