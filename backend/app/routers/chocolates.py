@@ -27,10 +27,15 @@ def _normalize_sort_key(sort: str | None) -> str:
     return "name"
 
 
-def _list_cache_key(tag: list[str] | None, sort: str | None) -> str:
+def _list_cache_key(
+    tag: list[str] | None, sort: str | None, available: bool | None
+) -> str:
     t = tag or []
     tkey = ",".join(sorted(x.strip() for x in t if x and x.strip()))
-    return f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}"
+    return (
+        f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}:"
+        f"{bool(available)}"
+    )
 
 
 def _detail_cache_key(cid: UUID) -> str:
@@ -52,7 +57,7 @@ async def list_chocolates(
     ),
     session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:
-    key = _list_cache_key(tag, sort)
+    key = _list_cache_key(tag, sort, available)
     raw = await cache_get(key)
     if raw:
         try:
