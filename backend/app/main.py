@@ -7,12 +7,11 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.exceptions import RedisError
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from pymongo.errors import PyMongoError
 
 from app.cache import get_redis, close_redis
-from app.db import engine, AsyncSessionFactory
-from app.routers import checkout, chocolates
+from app.db import close_db, get_database
+from app.routers import admin, checkout, chocolates
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -22,12 +21,12 @@ log = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
     await close_redis()
-    await engine.dispose()
+    await close_db()
 
 
 app = FastAPI(
     title="chocolate store API",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -47,6 +46,9 @@ app.include_router(
 app.include_router(
     checkout.router, prefix="/api", tags=["checkout"]
 )
+app.include_router(
+    admin.router, prefix="/api/admin", tags=["admin"]
+)
 
 
 @app.get("/api/health")
@@ -54,10 +56,9 @@ async def health() -> dict[str, str | bool]:
     db_ok = False
     redis_ok = False
     try:
-        async with AsyncSessionFactory() as s:
-            await s.execute(text("SELECT 1"))
-            db_ok = True
-    except SQLAlchemyError as e:
+        await get_database().command("ping")
+        db_ok = True
+    except PyMongoError as e:
         log.warning("health db: %s", e)
     try:
         r = get_redis()

@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# Stop user-level Postgres and Redis for this project.
+# Stop user-level MongoDB and Redis for this project.
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 0
-
-# shellcheck source=/dev/null
-source "$ROOT/scripts/postgres-path.sh"
-
-add_postgres_bin_to_path
 
 if [ -f .env ]; then
   set -a
@@ -17,19 +12,17 @@ if [ -f .env ]; then
   set +a
 fi
 
-: "${PG_PORT:=55432}"
-: "${PG_USER:=chocolate}"
-: "${PG_DB:=chocolate_store}"
+: "${MONGO_PORT:=57017}"
+: "${MONGO_DB:=chocolate_store}"
 : "${REDIS_PORT:=63790}"
 
-# Drop the app DB so nothing persists between runs (demo app).
-if [ -d .data/postgres ] && pg_ctl -D .data/postgres status >/dev/null 2>&1; then
-  psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres \
-    -c "DROP DATABASE IF EXISTS \"$PG_DB\";" >/dev/null 2>&1 || true
-fi
-
-if [ -d .data/postgres ]; then
-  pg_ctl -D .data/postgres stop -m fast >/dev/null 2>&1 || true
+if [ -f .data/mongo/mongod.pid ] 2>/dev/null; then
+  pid="$(cat .data/mongo/mongod.pid 2>/dev/null || true)"
+  if [ -n "${pid}" ] && kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    sleep 0.5
+  fi
+  rm -f .data/mongo/mongod.pid
 fi
 
 if command -v redis-cli >/dev/null 2>&1; then

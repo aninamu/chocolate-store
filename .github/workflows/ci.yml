@@ -10,19 +10,15 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql+asyncpg://chocolate@127.0.0.1:55432/chocolate_store
+      MONGODB_URL: mongodb://127.0.0.1:57017/chocolate_store
       REDIS_URL: redis://127.0.0.1:63790/0
     services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: chocolate
-          POSTGRES_DB: chocolate_store
-          POSTGRES_HOST_AUTH_METHOD: trust
+      mongo:
+        image: mongo:7
         ports:
-          - 55432:5432
+          - 57017:27017
         options: >-
-          --health-cmd="pg_isready -U chocolate -d chocolate_store"
+          --health-cmd="mongosh --eval 'db.adminCommand({ ping: 1 })'"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -51,7 +47,7 @@ jobs:
           backend/.venv/bin/pip install -U pip
           backend/.venv/bin/pip install -e "backend[dev]"
 
-      - name: Initialize schema and seed data
+      - name: Initialize collections and seed data
         run: |
           cd backend
           .venv/bin/python -m app.init_db

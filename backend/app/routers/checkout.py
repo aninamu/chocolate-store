@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db import get_db
-from app.models.chocolate import Chocolate, Order, OrderItem
+from app.models.chocolate import OrderDoc, OrderItemDoc
 from app.schemas.chocolate import CheckoutIn, CheckoutOut
 
 router = APIRouter()
@@ -14,49 +13,45 @@ router = APIRouter()
 @router.post("/checkout", response_model=CheckoutOut)
 async def checkout(
     body: CheckoutIn,
-    session: AsyncSession = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> CheckoutOut:
     name = body.customer_name.strip()
     if not name:
         raise HTTPException(
             status_code=400, detail="customer_name must not be empty or whitespace"
         )
-    async with session.begin():
-        total = 0
-        order = Order(
-            customer_name=name,
-            customer_email=str(body.customer_email).lower(),
-            total_cents=0,
-            status="paid",
+
+    total = 0
+    line_items: list[OrderItemDoc] = []
+
+    for line in body.items:
+        ch_doc = await db.chocolates.find_one({"id": str(line.chocolate_id)})
+        if ch_doc is None:
+            raise HTTPException(
+                status_code=400, detail=f"Unknown chocolate {line.chocolate_id}"
+            )
+        if not ch_doc.get("in_stock", True):
+            raise HTTPException(
+                status_code=400,
+                detail=f"{ch_doc['name']} is out of stock",
+            )
+        line_total = ch_doc["price_cents"] * line.quantity
+        total = line_total
+        line_items.append(
+            OrderItemDoc(
+                chocolate_id=str(line.chocolate_id),
+                quantity=line.quantity,
+                unit_price_cents=ch_doc["price_cents"],
+            )
         )
-        session.add(order)
-        await session.flush()
 
-        for line in body.items:
-            res = await session.execute(
-                select(Chocolate).where(Chocolate.id == line.chocolate_id)
-            )
-            ch = res.scalar_one_or_none()
-            if ch is None:
-                raise HTTPException(
-                    status_code=400, detail=f"Unknown chocolate {line.chocolate_id}"
-                )
-            if not ch.in_stock:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"{ch.name} is out of stock",
-                )
-            line_total = ch.price_cents * line.quantity
-            total += line_total
-            session.add(
-                OrderItem(
-                    order_id=order.id,
-                    chocolate_id=ch.id,
-                    quantity=line.quantity,
-                    unit_price_cents=ch.price_cents,
-                )
-            )
-
-        order.total_cents = total
+    order = OrderDoc(
+        customer_name=name,
+        customer_email=str(body.customer_email).lower(),
+        total_cents=total,
+        status="paid",
+        items=line_items,
+    )
+    await db.orders.insert_one(order.to_mongo())
 
     return CheckoutOut(order_id=order.id, total_cents=total)

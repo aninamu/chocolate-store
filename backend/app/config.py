@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    database_url: str
+    mongodb_url: str
     redis_url: str
     cache_ttl_seconds: int = 60
 

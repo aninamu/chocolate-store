@@ -1,3 +1,3 @@
-from app.models.chocolate import Chocolate, Order, OrderItem
+from app.models.chocolate import ChocolateDoc, OrderDoc, OrderItemDoc
 
-__all__ = ("Chocolate", "Order", "OrderItem")
+__all__ = ("ChocolateDoc", "OrderDoc", "OrderItemDoc")
