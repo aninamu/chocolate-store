@@ -36,7 +36,7 @@ async def checkout(
                 detail=f"{ch_doc['name']} is out of stock",
             )
         line_total = ch_doc["price_cents"] * line.quantity
-        total = line_total
+        total += line_total
         line_items.append(
             OrderItemDoc(
                 chocolate_id=str(line.chocolate_id),
