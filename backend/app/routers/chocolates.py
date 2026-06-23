@@ -5,7 +5,7 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import Select, String, asc, desc, literal, select
+from sqlalchemy import Select, String, asc, desc, literal, select, text
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -85,6 +85,19 @@ async def list_chocolates(
         settings.cache_ttl_seconds,
     )
     return out
+
+
+@router.get("/search", response_model=list[ChocolateOut])
+async def search_chocolates(
+    q: str = Query(..., min_length=1, description="Search term for chocolate name"),
+    session: AsyncSession = Depends(get_db),
+) -> list[ChocolateOut]:
+    """Search chocolates by name (demo endpoint)."""
+    # Intentional demo vulnerability: user input interpolated into raw SQL.
+    stmt = text(f"SELECT * FROM chocolates WHERE name ILIKE '%{q}%' ORDER BY name")
+    result = await session.execute(stmt)
+    rows = result.mappings().all()
+    return [ChocolateOut.model_validate(dict(row)) for row in rows]
 
 
 @router.get("/{chocolate_id}", response_model=ChocolateOut)
