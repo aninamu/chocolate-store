@@ -3,26 +3,17 @@ from __future__ import annotations
 import os
 import uuid
 
-from sqlalchemy import create_engine, text
+from pymongo import MongoClient
 from starlette.testclient import TestClient
 
 
-def _sync_engine():
-    raw = os.environ["DATABASE_URL"]
-    sync_url = raw.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
-    return create_engine(sync_url)
-
-
 def _set_in_stock_sync(cid: uuid.UUID, in_stock: bool) -> None:
-    eng = _sync_engine()
+    client = MongoClient(os.environ["MONGODB_URL"])
     try:
-        with eng.begin() as conn:
-            conn.execute(
-                text("UPDATE chocolates SET in_stock = :flag WHERE id = :cid"),
-                {"flag": in_stock, "cid": cid},
-            )
+        db = client.get_default_database()
+        db.chocolates.update_one({"_id": cid}, {"$set": {"in_stock": in_stock}})
     finally:
-        eng.dispose()
+        client.close()
 
 
 def test_checkout_success(api_client: TestClient) -> None:

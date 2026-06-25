@@ -1,26 +1,45 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from beanie import init_beanie
 
 from app.config import settings
+from app.models.chocolate import Chocolate, Order, OrderItem
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=False,
-    pool_pre_ping=True,
-)
-
-AsyncSessionFactory = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
+_client: AsyncIOMotorClient | None = None
 
 
-async def get_db() -> AsyncIterator[AsyncSession]:
-    async with AsyncSessionFactory() as session:
-        yield session
+def _database(client: AsyncIOMotorClient) -> AsyncIOMotorDatabase:
+    return client.get_default_database()
+
+
+async def connect_db() -> None:
+    global _client
+    _client = AsyncIOMotorClient(settings.mongodb_url)
+    await init_beanie(
+        database=_database(_client),
+        document_models=[Chocolate, Order, OrderItem],
+    )
+
+
+async def close_db() -> None:
+    global _client
+    if _client is not None:
+        _client.close()
+        _client = None
+
+
+def get_client() -> AsyncIOMotorClient:
+    if _client is None:
+        raise RuntimeError("Database not initialized")
+    return _client
+
+
+async def drop_database() -> None:
+    client = get_client()
+    db = _database(client)
+    await client.drop_database(db.name)
+    await init_beanie(
+        database=_database(client),
+        document_models=[Chocolate, Order, OrderItem],
+    )

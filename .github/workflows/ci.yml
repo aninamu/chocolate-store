@@ -10,22 +10,19 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql+asyncpg://chocolate@127.0.0.1:55432/chocolate_store
+      MONGODB_URL: mongodb://127.0.0.1:57017/chocolate_store?replicaSet=rs0
       REDIS_URL: redis://127.0.0.1:63790/0
     services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: chocolate
-          POSTGRES_DB: chocolate_store
-          POSTGRES_HOST_AUTH_METHOD: trust
+      mongo:
+        image: mongo:7
         ports:
-          - 55432:5432
+          - 57017:27017
         options: >-
-          --health-cmd="pg_isready -U chocolate -d chocolate_store"
+          --health-cmd="mongosh --eval \"db.adminCommand('ping')\""
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+          --replSet rs0
       redis:
         image: redis:7
         ports:
@@ -50,6 +47,33 @@ jobs:
           python -m venv backend/.venv
           backend/.venv/bin/pip install -U pip
           backend/.venv/bin/pip install -e "backend[dev]"
+
+      - name: Initialize MongoDB replica set
+        run: |
+          for i in $(seq 1 30); do
+            if mongosh --port 57017 --quiet --eval "db.adminCommand('ping').ok" 2>/dev/null | grep -q 1; then
+              break
+            fi
+            sleep 1
+          done
+          mongosh --port 57017 --quiet --eval "
+            try {
+              rs.status();
+            } catch (e) {
+              rs.initiate({
+                _id: 'rs0',
+                members: [{ _id: 0, host: '127.0.0.1:57017' }],
+              });
+            }
+          "
+          for i in $(seq 1 30); do
+            if mongosh --port 57017 --quiet --eval "rs.isMaster().ismaster" 2>/dev/null | grep -q true; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "MongoDB replica set failed to elect a primary" >&2
+          exit 1
 
       - name: Initialize schema and seed data
         run: |

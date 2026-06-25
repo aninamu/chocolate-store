@@ -19,7 +19,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 - **Missing input validation** — request bodies bypassing Pydantic schemas or accepting unbounded strings/lists.
 - **Broken demo-user authorization** — social write endpoints that ignore `X-Demo-User-Id` or allow acting as another user without checks.
 - **Secrets in code** — hardcoded API keys, tokens, or real credentials (`.env` values belong in env vars only).
-- **Schema/seed drift** — changes to `backend/app/schemas/` without matching updates to `backend/app/seed.py` or SQLAlchemy models.
+- **Schema/seed drift** — changes to `backend/app/schemas/` without matching updates to `backend/app/seed.py` or Beanie models.
 - **Unhandled async errors** — missing `try/except` around DB/Redis calls that can leave sessions open or return 500s for predictable validation failures.
 - **Cache correctness** — Redis cache keys or TTL changes that could serve stale catalog data after writes.
 
@@ -40,7 +40,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 
 - No real authentication system — demo user picker is by design.
 - Mock checkout — no payment processor, no PCI scope.
-- Database wiped on every `make dev` — migrations are not used; schema comes from SQLAlchemy models.
+- Database wiped on every `make dev` — migrations are not used; collections come from Beanie models.
 - Redis cache is optional — backend degrades gracefully without Redis.
 - External Unsplash images — already allowlisted in `frontend/next.config.ts`.
 - Coverage thresholds — reports are informational only; do not require 100% coverage.

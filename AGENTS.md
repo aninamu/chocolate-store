@@ -6,7 +6,7 @@
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| PostgreSQL 16 | 55432 | Primary data store (user-level `pg_ctl`, data in `.data/postgres/`) |
+| MongoDB 7 | 57017 | Primary data store (user-level `mongod`, data in `.data/mongo/`, single-node replica set) |
 | Redis 7 | 63790 | API response cache (user-level `redis-server`, data in `.data/redis/`) |
 | FastAPI backend | 8000 | REST API (`uvicorn --reload`) |
 | Next.js frontend | 3000 | Web UI (`next dev`) |
@@ -17,7 +17,7 @@
 
 ### Running tests
 
-- Backend tests require Postgres and Redis running: `make services-up && make test-backend`
+- Backend tests require MongoDB and Redis running: `make services-up && make test-backend`
 - Frontend tests run standalone: `make test-frontend`
 - Both: `make test` (services must be up for backend tests)
 
@@ -27,9 +27,9 @@
 
 ### Cloud agent VM prerequisites
 
-`make setup` and `make dev` expect **Postgres 16**, **Redis 7**, and **`python3.12-venv`** on the VM (see README apt packages). Bootstrap also runs `pip install` and `npm install`, which need working egress to PyPI and the npm registry.
+`make setup` and `make dev` expect **MongoDB 7**, **Redis 7**, and **`python3.12-venv`** on the VM (see README install notes). Bootstrap also runs `pip install` and `npm install`, which need working egress to PyPI and the npm registry.
 
-If bootstrap fails with missing `initdb` / `redis-server` or SSL errors from `pip` / `npm`, allow outbound access to:
+If bootstrap fails with missing `mongod` / `redis-server` or SSL errors from `pip` / `npm`, allow outbound access to:
 
 - `archive.ubuntu.com`, `security.ubuntu.com` (apt)
 - `pypi.org`, `files.pythonhosted.org` (Python dependencies)
@@ -41,11 +41,11 @@ If you just approved outbound domains and installs still fail with TLS errors (P
 
 ### Non-obvious caveats
 
-- PostgreSQL binaries (`pg_ctl`, `initdb`, etc.) live at `/usr/lib/postgresql/16/bin/` on Ubuntu. The `scripts/postgres-path.sh` helper auto-adds this to `PATH`.
-- The database is **dropped and recreated** on every `make services-up` / `make dev` — schema comes from SQLAlchemy models, seed data from `backend/app/seed.py`.
+- MongoDB runs as a **single-node replica set** (`--replSet rs0`) so checkout can use multi-document transactions.
+- The database is **dropped and reseeded** on every `make services-up` / `make dev` — collections come from Beanie models, seed data from `backend/app/seed.py`.
 - The `python3.12-venv` system package is required for `python3 -m venv` to work (not always pre-installed).
 - Redis gracefully degrades — the backend still works without it (no caching).
-- The `.env` file is auto-created from `.env.example` on first bootstrap. Ports are non-standard (55432, 63790) to avoid collisions with system services.
+- The `.env` file is auto-created from `.env.example` on first bootstrap. Ports are non-standard (57017, 63790) to avoid collisions with system services.
 - `make stop` is a hard teardown if `Ctrl-C` didn't clean up properly.
 
 ### Cloud VM networking

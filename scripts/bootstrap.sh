@@ -1,28 +1,20 @@
 #!/usr/bin/env bash
-# Idempotent: prerequisites, Python venv, npm deps, .env, initdb cluster if missing.
+# Idempotent: prerequisites, Python venv, npm deps, .env, Mongo data dir if missing.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-export PGPORT="${PG_PORT:-55432}"
-export PGUSER="${PG_USER:-chocolate}"
-
-# shellcheck source=/dev/null
-source "$ROOT/scripts/postgres-path.sh"
-
 need_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "error: '$1' not found in PATH." >&2
-    echo "  Install Postgres 16:  brew install postgresql@16  # macOS" >&2
-    echo "  Install Postgres 16:  sudo apt-get install postgresql  # Ubuntu" >&2
+    echo "  Install MongoDB 7:  brew install mongodb-community@7  # macOS" >&2
+    echo "  Install MongoDB 7:  see https://www.mongodb.com/docs/manual/installation/  # Linux" >&2
     echo "  Install Redis:        brew install redis  # macOS" >&2
     echo "  Install Redis:        sudo apt-get install redis-server  # Ubuntu" >&2
     exit 1
   fi
 }
-
-add_postgres_bin_to_path
 
 # Python
 python_ver="$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo 0)"
@@ -42,10 +34,8 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-need_cmd initdb
-need_cmd pg_ctl
-need_cmd psql
-need_cmd createdb
+need_cmd mongod
+need_cmd mongosh
 need_cmd redis-server
 need_cmd redis-cli
 
@@ -72,11 +62,7 @@ if [ -f frontend/package.json ]; then
   ( cd frontend && npm install --no-audit --no-fund )
 fi
 
-# Postgres data dir
-mkdir -p .data/postgres .data/redis logs
-if [ ! -s .data/postgres/PG_VERSION ]; then
-  echo "Initializing local Postgres cluster in .data/postgres (user: $PG_USER)…"
-  initdb -D .data/postgres -U "$PG_USER" --auth=trust --encoding=UTF8
-fi
+# Mongo data dir
+mkdir -p .data/mongo .data/redis logs
 
 echo "bootstrap: ok"

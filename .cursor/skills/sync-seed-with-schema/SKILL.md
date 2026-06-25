@@ -48,7 +48,7 @@ Do NOT apply for input-only schemas (e.g. `CartLineIn`, `CheckoutIn`, `CheckoutO
 
 1. **Diff the schema change.** Identify added, removed, renamed, or retyped fields on any `*Out` schema that maps to a seeded table (today: `ChocolateOut` → `chocolates`).
 
-2. **Propagate to the SQLAlchemy model.** Open the matching file in `backend/app/models/` and confirm the field exists with a compatible column type, nullability, and default. Add/edit the column if missing. Required-but-no-default columns must get values from seed rows.
+2. **Propagate to the Beanie model.** Open the matching file in `backend/app/models/` and confirm the field exists with a compatible type, nullability, and default. Add/edit the field if missing. Required fields without defaults must get values from seed rows.
 
 3. **Update every entry in `SEED`.** In `backend/app/seed.py`:
    - For an **added required field**: add a realistic value to every dict in `SEED`.
@@ -72,7 +72,7 @@ Do NOT apply for input-only schemas (e.g. `CartLineIn`, `CheckoutIn`, `CheckoutO
    - An em-dash / blank seed key for a row-sourced category.
    - `row.get("field")` (no default) for a NOT NULL column when some rows might omit the key.
 
-6. **Verify with a quick mental round-trip.** For every `SEED` row, the resulting ORM instance must serialize cleanly into the updated `*Out` schema (`model_config = {"from_attributes": True}`). Specifically check:
+6. **Verify with a quick mental round-trip.** For every `SEED` row, the resulting document must serialize cleanly into the updated `*Out` schema (`model_config = {"from_attributes": True}`). Specifically check:
    - All non-`Optional` schema fields are populated.
    - Types match (e.g. `int`, `str`, `List[str]`, `datetime`).
    - Validators pass (`Field(...)` constraints, `EmailStr`, etc.).
@@ -87,7 +87,7 @@ Copy this into your scratch space and tick as you go:
 - [ ] Identified which *Out schema(s) changed
 - [ ] Listed added/removed/renamed/retyped fields
 - [ ] Categorized every schema field (server-generated / derived / row-sourced required / row-sourced optional)
-- [ ] Updated matching SQLAlchemy model column(s)
+- [ ] Updated matching Beanie Document field(s)
 - [ ] Edited every dict in SEED to match
 - [ ] Updated init_db.py constructor call
 - [ ] No literals in init_db.py for row-sourced fields (every such field reads from `row[...]` or `row.get(...)`)
@@ -100,7 +100,7 @@ Copy this into your scratch space and tick as you go:
 Schema change: add a required `weight_grams: int` to `ChocolateOut`.
 
 1. `backend/app/schemas/chocolate.py` — add `weight_grams: int` (no default) on `ChocolateOut`.
-2. `backend/app/models/chocolate.py` — add `weight_grams: Mapped[int] = mapped_column(Integer, nullable=False)` on `Chocolate`.
+2. `backend/app/models/chocolate.py` — add `weight_grams: int` on `Chocolate`.
 3. `backend/app/seed.py` — add `"weight_grams": <int>` to every dict in `SEED` with a realistic value per product.
 4. `backend/app/init_db.py` — pass `weight_grams=row["weight_grams"]` inside the `Chocolate(...)` call.
 5. Re-read each `SEED` entry to confirm the new key is present and is an `int`.
@@ -112,7 +112,7 @@ If instead the field were optional (`Optional[int] = None`), the model column wo
 - Editing the schema and stopping there. Seed rows that miss a required field will crash `init_db` on the next `make dev`.
 - Leaving stale keys in `SEED` after removing a field — they get silently ignored and mislead future readers.
 - Adding a field to only some `SEED` rows when the schema marks it required.
-- Putting the new field on the SQLAlchemy model but forgetting to thread it through the `Chocolate(...)` call in `init_db.py` — the column will be `NULL`/default for every row.
+- Putting the new field on the Beanie model but forgetting to thread it through the `Chocolate(...)` call in `init_db.py` — the field will use the default for every row.
 - **Hardcoding a literal in `init_db.py` for a row-sourced field** (e.g. `in_stock=True`, `status="paid"`). The model gets a value and the schema validates, but `seed.py` is no longer authoritative and you can't express the "off" case (out-of-stock chocolate, refunded order, etc.) without editing code outside `seed.py`. This is the mirror image of forgetting the constructor call: same drift, different direction.
 - **Treating the field-presence check as the audit.** "A value reaches the model" is necessary but not sufficient. The real bar is "every value the schema permits is reachable from a `SEED` dict." Apply the contract question (top of file) field-by-field.
 - **Confusing model defaults with server-generated values.** `default=True` on a column makes a value appear if you omit it; it does not make the field server-generated. Server-generated means `id`/`created_at` style — emitted by the DB or the model with no per-row meaning. Everything else is row-sourced.

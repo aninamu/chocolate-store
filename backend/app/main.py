@@ -6,12 +6,11 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo.errors import PyMongoError
 from redis.exceptions import RedisError
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.cache import get_redis, close_redis
-from app.db import engine, AsyncSessionFactory
+from app.db import close_db, connect_db, get_client
 from app.routers import checkout, chocolates
 
 logging.basicConfig(level=logging.INFO)
@@ -20,9 +19,10 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    await connect_db()
     yield
     await close_redis()
-    await engine.dispose()
+    await close_db()
 
 
 app = FastAPI(
@@ -54,10 +54,10 @@ async def health() -> dict[str, str | bool]:
     db_ok = False
     redis_ok = False
     try:
-        async with AsyncSessionFactory() as s:
-            await s.execute(text("SELECT 1"))
-            db_ok = True
-    except SQLAlchemyError as e:
+        client = get_client()
+        await client.admin.command("ping")
+        db_ok = True
+    except (PyMongoError, RuntimeError) as e:
         log.warning("health db: %s", e)
     try:
         r = get_redis()
