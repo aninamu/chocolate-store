@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { buttonVariants, Button } from "@/components/ui/button";
 import { CartDrawer } from "@/components/CartDrawer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useShop } from "@/context/shop-state";
 
 const links = [
@@ -51,6 +52,7 @@ export function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button
             type="button"
             variant="outline"
