@@ -4,6 +4,7 @@ use axum::{
     Json,
 };
 use serde::Serialize;
+use tracing::error;
 use validator::ValidationErrors;
 
 #[derive(Debug, Serialize)]
@@ -33,13 +34,16 @@ impl AppError {
     pub fn detail(&self) -> String {
         match self {
             AppError::BadRequest(msg) | AppError::NotFound(msg) => msg.clone(),
-            AppError::Database(e) => e.to_string(),
+            AppError::Database(_) => "Internal server error".to_string(),
         }
     }
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        if let AppError::Database(ref e) = self {
+            error!("database error: {e}");
+        }
         let status = self.status();
         let body = ErrorBody {
             detail: serde_json::Value::String(self.detail()),

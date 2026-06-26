@@ -26,14 +26,24 @@ pub fn services_ports_open() -> bool {
     true
 }
 
-pub fn skip_if_services_down() {
-    if !services_ports_open() {
-        eprintln!(
-            "Postgres (55432) / Redis (63790) not reachable; \
-             run `make services-up` (or `make dev`) first."
-        );
-        std::process::exit(0);
+pub fn skip_if_services_down() -> bool {
+    if services_ports_open() {
+        return true;
     }
+
+    eprintln!(
+        "Postgres (55432) / Redis (63790) not reachable; \
+         run `make services-up` (or `make dev`) first."
+    );
+
+    if std::env::var_os("CI").is_some() {
+        panic!(
+            "integration tests require Postgres (55432) and Redis (63790); \
+             services are not reachable"
+        );
+    }
+
+    false
 }
 
 pub async fn test_app() -> Router {
@@ -50,12 +60,7 @@ pub async fn test_app() -> Router {
 pub async fn get_json(app: &Router, uri: &str) -> (StatusCode, serde_json::Value) {
     let response = app
         .clone()
-        .oneshot(
-            Request::builder()
-                .uri(uri)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
         .await
         .expect("request");
 
@@ -65,7 +70,11 @@ pub async fn get_json(app: &Router, uri: &str) -> (StatusCode, serde_json::Value
     (status, json)
 }
 
-pub async fn post_json(app: &Router, uri: &str, payload: serde_json::Value) -> (StatusCode, serde_json::Value) {
+pub async fn post_json(
+    app: &Router,
+    uri: &str,
+    payload: serde_json::Value,
+) -> (StatusCode, serde_json::Value) {
     let response = app
         .clone()
         .oneshot(

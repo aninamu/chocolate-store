@@ -6,7 +6,9 @@ use uuid::Uuid;
 
 #[tokio::test]
 async fn list_chocolates_returns_items() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (status, items) = get_json(&app, "/api/chocolates").await;
@@ -23,7 +25,9 @@ async fn list_chocolates_returns_items() {
 
 #[tokio::test]
 async fn list_chocolates_tag_filter_or_semantics() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (status, items) = get_json(&app, "/api/chocolates?tag=dark&tag=milk").await;
@@ -41,7 +45,9 @@ async fn list_chocolates_tag_filter_or_semantics() {
 
 #[tokio::test]
 async fn list_chocolates_sort_price_asc() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (status, items) = get_json(&app, "/api/chocolates?sort=price_asc").await;
@@ -59,14 +65,14 @@ async fn list_chocolates_sort_price_asc() {
 
 #[tokio::test]
 async fn get_chocolate_detail_and_404() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (listed_status, listed) = get_json(&app, "/api/chocolates").await;
     assert_eq!(listed_status, StatusCode::OK);
-    let cid = listed.as_array().unwrap()[0]["id"]
-        .as_str()
-        .expect("id");
+    let cid = listed.as_array().unwrap()[0]["id"].as_str().expect("id");
 
     let (status, body) = get_json(&app, &format!("/api/chocolates/{cid}")).await;
     assert_eq!(status, StatusCode::OK);
@@ -75,8 +81,7 @@ async fn get_chocolate_detail_and_404() {
     assert!(!body["churrito_quote"].as_str().unwrap_or("").is_empty());
 
     let missing_id = Uuid::new_v4();
-    let (missing_status, err) =
-        get_json(&app, &format!("/api/chocolates/{missing_id}")).await;
+    let (missing_status, err) = get_json(&app, &format!("/api/chocolates/{missing_id}")).await;
     assert_eq!(missing_status, StatusCode::NOT_FOUND);
     assert!(err.get("detail").is_some());
 }

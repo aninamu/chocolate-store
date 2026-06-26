@@ -28,9 +28,31 @@ async fn set_in_stock(cid: Uuid, in_stock: bool) {
     pool.close().await;
 }
 
+struct InStockGuard {
+    cid: Uuid,
+}
+
+impl InStockGuard {
+    async fn out_of_stock(cid: Uuid) -> Self {
+        set_in_stock(cid, false).await;
+        Self { cid }
+    }
+}
+
+impl Drop for InStockGuard {
+    fn drop(&mut self) {
+        let cid = self.cid;
+        let _ = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(set_in_stock(cid, true))
+        });
+    }
+}
+
 #[tokio::test]
 async fn checkout_success() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (_, items) = get_json(&app, "/api/chocolates").await;
@@ -54,7 +76,9 @@ async fn checkout_success() {
 
 #[tokio::test]
 async fn checkout_unknown_chocolate() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let bad_id = Uuid::new_v4();
@@ -72,14 +96,16 @@ async fn checkout_unknown_chocolate() {
 
 #[tokio::test]
 async fn checkout_out_of_stock() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (_, items) = get_json(&app, "/api/chocolates").await;
     let ch = &items.as_array().unwrap()[0];
     let cid = Uuid::parse_str(ch["id"].as_str().unwrap()).unwrap();
 
-    set_in_stock(cid, false).await;
+    let _guard = InStockGuard::out_of_stock(cid).await;
     let payload = json!({
         "customer_name": "Test User",
         "customer_email": "test@example.com",
@@ -87,7 +113,6 @@ async fn checkout_out_of_stock() {
     });
 
     let (status, err) = post_json(&app, "/api/checkout", payload).await;
-    set_in_stock(cid, true).await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
     let detail = err["detail"].as_str().unwrap_or("").to_lowercase();

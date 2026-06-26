@@ -5,7 +5,9 @@ use common::{get_json, skip_if_services_down, test_app};
 
 #[tokio::test]
 async fn health_returns_shape() {
-    skip_if_services_down();
+    if !skip_if_services_down() {
+        return;
+    }
     let app = test_app().await;
 
     let (status, data) = get_json(&app, "/api/health").await;
