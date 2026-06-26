@@ -1,6 +1,6 @@
 # Bugbot review guide — chocolate-store
 
-This repo is a demo marketplace: **Next.js 15 + FastAPI + Postgres + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
+This repo is a demo marketplace: **Next.js 15 + Axum (Rust) + Postgres + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
 
 Use this file to tune PR reviews. Focus on **real bugs and regressions**, not style nitpicks.
 
@@ -19,7 +19,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 - **Missing input validation** — request bodies bypassing Pydantic schemas or accepting unbounded strings/lists.
 - **Broken demo-user authorization** — social write endpoints that ignore `X-Demo-User-Id` or allow acting as another user without checks.
 - **Secrets in code** — hardcoded API keys, tokens, or real credentials (`.env` values belong in env vars only).
-- **Schema/seed drift** — changes to `backend/app/schemas/` without matching updates to `backend/app/seed.py` or SQLAlchemy models.
+- **Schema/seed drift** — changes to `backend/src/models.rs` (`ChocolateOut`) without matching updates to `backend/src/seed.rs` or `backend/src/schema.sql`.
 - **Unhandled async errors** — missing `try/except` around DB/Redis calls that can leave sessions open or return 500s for predictable validation failures.
 - **Cache correctness** — Redis cache keys or TTL changes that could serve stale catalog data after writes.
 
@@ -33,7 +33,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 
 ### Cross-cutting
 
-- **New API endpoints without tests** — backend router changes should include or update pytest coverage under `backend/tests/`.
+- **New API endpoints without tests** — backend route changes should include or update integration tests under `backend/tests/`.
 - **CI breakage** — changes that would fail `backend-tests` or `frontend-tests` GitHub Actions workflows.
 
 ## Usually ignore (demo scope)
@@ -49,8 +49,8 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 
 | Area changed | Expect |
 |--------------|--------|
-| `backend/app/routers/**` | New or updated tests in `backend/tests/` |
-| `backend/app/schemas/**` | Sync `backend/app/seed.py` if output shape changed |
+| `backend/src/routes/**` | New or updated tests in `backend/tests/` |
+| `backend/src/models.rs` | Sync `backend/src/seed.rs` if output shape changed |
 | `frontend/src/app/api/**` | Vitest route tests alongside the handler |
 | `frontend/src/components/**` | Tests when behavior is non-trivial (follow existing `*.test.tsx` patterns) |
 
@@ -72,7 +72,7 @@ Use language like this when reporting:
 
 > **IDOR on social API:** `DELETE /api/posts/{id}` does not verify the post author matches `X-Demo-User-Id`.
 
-> **Missing test:** New `POST /api/checkout` validation branch has no pytest coverage.
+> **Missing test:** New `POST /api/checkout` validation branch has no integration test coverage.
 
 ## False positives to suppress
 

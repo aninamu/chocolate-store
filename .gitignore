@@ -11,7 +11,8 @@ logs/
 .pytest_cache/
 .coverage
 **/.coverage
-backend/htmlcov/
+backend/coverage/
+backend/target/
 frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/

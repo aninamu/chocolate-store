@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Idempotent: prerequisites, Python venv, npm deps, .env, initdb cluster if missing.
+# Idempotent: prerequisites, Rust backend deps, npm deps, .env, initdb cluster if missing.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -24,16 +24,10 @@ need_cmd() {
 
 add_postgres_bin_to_path
 
-# Python
-python_ver="$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))' 2>/dev/null || echo 0)"
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "error: python3 is required (3.12+ recommended)." >&2
+# Rust
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "error: cargo (Rust toolchain) is required. Install: https://rustup.rs/" >&2
   exit 1
-fi
-if awk -v v="$python_ver" 'BEGIN{exit (v+0 < 3.10)}' 2>/dev/null; then
-  : # ok
-else
-  echo "warning: Python $python_ver found; 3.12+ recommended." >&2
 fi
 
 # Node
@@ -59,13 +53,13 @@ set -a
 source .env
 set +a
 
-# Backend venv
-if [ ! -d backend/.venv ]; then
-  echo "Creating Python venv in backend/.venv…"
-  python3 -m venv backend/.venv
+# Backend (Rust)
+( cd backend && cargo fetch --quiet )
+if command -v cargo-watch >/dev/null 2>&1; then
+  : # optional hot reload for `make dev`
+else
+  echo "note: install cargo-watch for backend hot reload (cargo install cargo-watch)."
 fi
-backend/.venv/bin/pip install -q -U pip
-backend/.venv/bin/pip install -q -e "backend[dev]"
 
 # Frontend deps (after frontend/ exists)
 if [ -f frontend/package.json ]; then
