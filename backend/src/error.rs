@@ -3,6 +3,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::Serialize;
 use serde_json::{json, Value};
+use tracing::error;
 use validator::ValidationErrors;
 
 #[derive(Debug, Serialize)]
@@ -30,6 +31,18 @@ impl AppError {
         }
     }
 
+    pub fn internal_server_error() -> Self {
+        Self {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            detail: json!("Internal server error"),
+        }
+    }
+
+    pub fn from_db_error(err: impl std::fmt::Display) -> Self {
+        error!("database error: {err}");
+        Self::internal_server_error()
+    }
+
     pub fn validation(errors: ValidationErrors) -> Self {
         let detail: Vec<Value> = errors
             .field_errors()
@@ -55,7 +68,13 @@ impl AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        (self.status, Json(ErrorBody { detail: self.detail })).into_response()
+        (
+            self.status,
+            Json(ErrorBody {
+                detail: self.detail,
+            }),
+        )
+            .into_response()
     }
 }
 

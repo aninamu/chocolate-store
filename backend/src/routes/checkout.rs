@@ -41,11 +41,7 @@ pub async fn checkout(
 
     let email = body.customer_email.trim().to_lowercase();
 
-    let mut tx = state
-        .pool
-        .begin()
-        .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+    let mut tx = state.pool.begin().await.map_err(AppError::from_db_error)?;
 
     let order_id = Uuid::new_v4();
     sqlx::query(
@@ -58,9 +54,9 @@ pub async fn checkout(
     .bind("paid")
     .execute(&mut *tx)
     .await
-    .map_err(|e| AppError::bad_request(e.to_string()))?;
+    .map_err(AppError::from_db_error)?;
 
-    let mut total = 0_i32;
+    let mut total = 0_i64;
 
     for line in &body.items {
         let ch = sqlx::query_as::<_, ChocolateOut>(
@@ -69,7 +65,7 @@ pub async fn checkout(
         .bind(line.chocolate_id)
         .fetch_optional(&mut *tx)
         .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+        .map_err(AppError::from_db_error)?;
 
         let Some(ch) = ch else {
             return Err(AppError::bad_request(format!(
@@ -85,8 +81,12 @@ pub async fn checkout(
             )));
         }
 
-        let line_total = ch.price_cents * line.quantity;
-        total += line_total;
+        let line_total = (ch.price_cents as i64)
+            .checked_mul(line.quantity as i64)
+            .ok_or_else(|| AppError::bad_request("line total overflow"))?;
+        total = total
+            .checked_add(line_total)
+            .ok_or_else(|| AppError::bad_request("order total overflow"))?;
 
         sqlx::query(
             "INSERT INTO order_items (id, order_id, chocolate_id, quantity, unit_price_cents) VALUES ($1, $2, $3, $4, $5)",
@@ -98,22 +98,24 @@ pub async fn checkout(
         .bind(ch.price_cents)
         .execute(&mut *tx)
         .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+        .map_err(AppError::from_db_error)?;
     }
 
+    let total_cents: i32 = total
+        .try_into()
+        .map_err(|_| AppError::bad_request("order total overflow"))?;
+
     sqlx::query("UPDATE orders SET total_cents = $1 WHERE id = $2")
-        .bind(total)
+        .bind(total_cents)
         .bind(order_id)
         .execute(&mut *tx)
         .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+        .map_err(AppError::from_db_error)?;
 
-    tx.commit()
-        .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+    tx.commit().await.map_err(AppError::from_db_error)?;
 
     Ok(Json(CheckoutOut {
         order_id,
-        total_cents: total,
+        total_cents,
     }))
 }

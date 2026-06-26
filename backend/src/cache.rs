@@ -7,22 +7,35 @@ use tracing::warn;
 
 use crate::config::Settings;
 
-static REDIS: OnceCell<ConnectionManager> = OnceCell::const_new();
+static REDIS: OnceCell<Option<ConnectionManager>> = OnceCell::const_new();
 
 pub async fn init_redis(settings: &Settings) {
-    let url = settings.redis_url.clone();
     REDIS
         .get_or_init(|| async {
-            let client = redis::Client::open(url).expect("invalid REDIS_URL");
-            ConnectionManager::new(client)
-                .await
-                .expect("failed to connect to Redis")
+            let url = settings.redis_url.clone();
+            match redis::Client::open(url) {
+                Ok(client) => match ConnectionManager::new(client).await {
+                    Ok(conn) => Some(conn),
+                    Err(e) => {
+                        warn!("failed to connect to Redis: {e}");
+                        None
+                    }
+                },
+                Err(e) => {
+                    warn!("invalid REDIS_URL: {e}");
+                    None
+                }
+            }
         })
         .await;
 }
 
+fn redis_conn() -> Option<ConnectionManager> {
+    REDIS.get().and_then(|conn| conn.clone())
+}
+
 pub async fn cache_get(key: &str) -> Option<String> {
-    let conn = REDIS.get()?;
+    let conn = redis_conn()?;
     let mut conn = conn.clone();
     match conn.get::<_, Option<String>>(key).await {
         Ok(value) => value,
@@ -34,7 +47,7 @@ pub async fn cache_get(key: &str) -> Option<String> {
 }
 
 pub async fn cache_set(key: &str, value: &str, ttl: u64) {
-    let Some(conn) = REDIS.get() else {
+    let Some(conn) = redis_conn() else {
         return;
     };
     let mut conn = conn.clone();
@@ -44,7 +57,7 @@ pub async fn cache_set(key: &str, value: &str, ttl: u64) {
 }
 
 pub async fn ping_redis() -> bool {
-    let Some(conn) = REDIS.get() else {
+    let Some(conn) = redis_conn() else {
         return false;
     };
     let mut conn = conn.clone();
@@ -55,7 +68,7 @@ pub async fn ping_redis() -> bool {
 }
 
 pub fn redis_initialized() -> bool {
-    REDIS.get().is_some()
+    redis_conn().is_some()
 }
 
 pub struct RedisGuard;

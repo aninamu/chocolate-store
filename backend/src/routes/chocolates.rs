@@ -179,7 +179,7 @@ pub async fn list_chocolates(
 
     let out = fetch_chocolates(&state.pool, &query.tag, query.sort.as_deref())
         .await
-        .map_err(|e| AppError::bad_request(e.to_string()))?;
+        .map_err(AppError::from_db_error)?;
 
     if let Ok(json) = serde_json::to_string(&out) {
         cache::cache_set(&key, &json, state.settings.cache_ttl_seconds).await;
@@ -216,7 +216,7 @@ pub async fn get_chocolate(
     .bind(chocolate_id)
     .fetch_optional(&state.pool)
     .await
-    .map_err(|e| AppError::bad_request(e.to_string()))?;
+    .map_err(AppError::from_db_error)?;
 
     let Some(out) = row else {
         return Err(AppError::not_found("Chocolate not found"));
