@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start user-level Postgres + Redis, then (re)create a fresh app database from
-# SQLAlchemy models and load seed data. No migrations — the DB is disposable.
+# sqlx schema and seed data. No migrations — the DB is disposable.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -70,7 +70,7 @@ until redis-cli -p "$REDIS_PORT" ping 2>/dev/null | grep -q PONG; do
   sleep 0.1
 done
 
-# ---- Fresh app DB every startup (no migrations; schema comes from SQLAlchemy models)
+# ---- Fresh app DB every startup (no migrations; schema comes from schema.sql)
 psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
   -c "DROP DATABASE IF EXISTS \"$PG_DB\";" \
   -c "CREATE DATABASE \"$PG_DB\";"
@@ -78,7 +78,7 @@ psql -h 127.0.0.1 -p "$PG_PORT" -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
 # Flush stale cache entries that reference chocolates from a previous run
 redis-cli -p "$REDIS_PORT" FLUSHALL >/dev/null
 
-# Create schema from models and insert seed rows
-( cd "$ROOT/backend" && .venv/bin/python -m app.init_db )
+# Create schema and insert seed rows
+( cd "$ROOT/backend" && cargo run --quiet --bin init_db )
 
 echo "services-up: ok"

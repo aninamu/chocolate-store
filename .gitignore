@@ -12,6 +12,7 @@ logs/
 .coverage
 **/.coverage
 backend/htmlcov/
+backend/target/
 frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/

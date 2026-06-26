@@ -1,14 +1,14 @@
 # chocolate store
 
-A field-engineer friendly demo: browse a chocolate marketplace, save items, use a local cart, and run a **mock** checkout. No user accounts. **Next.js 15 (App Router + Tailwind + shadcn/ui)**, **FastAPI**, **Postgres** (user-level `pg_ctl`, project-local data dir), **Redis** (user-level `redis-server`, local port), all in **dev mode with hot reload**.
+A field-engineer friendly demo: browse a chocolate marketplace, save items, use a local cart, and run a **mock** checkout. No user accounts. **Next.js 15 (App Router + Tailwind + shadcn/ui)**, **Axum (Rust)**, **Postgres** (user-level `pg_ctl`, project-local data dir), **Redis** (user-level `redis-server`, local port), all in **dev mode**.
 
 ## Prerequisites
 
-- **Python 3.9+** (3.12+ recommended for newer typing support).
+- **Rust** (stable toolchain via [rustup](https://rustup.rs/)).
 - **Node.js 20+** and `npm`.
 - **Postgres 16** and **Redis 7** binaries on your `PATH` (`initdb`, `pg_ctl`, `psql`, `redis-server`, and `redis-cli`).
 - **macOS (Homebrew):** `brew install postgresql@16 redis`
-- **Ubuntu/Debian:** `sudo apt-get install postgresql redis-server python3.12-venv`
+- **Ubuntu/Debian:** `sudo apt-get install postgresql redis-server`
 
 On Ubuntu/Debian, the scripts automatically add `/usr/lib/postgresql/16/bin` to `PATH` when needed.
 
@@ -20,13 +20,12 @@ make dev
 
 This will:
 
-1. **Bootstrap** — create `backend/.venv`, `pip install` the API, `npm install` the frontend, copy `.env.example` → `.env` if needed, and `initdb` a Postgres cluster in `./.data/postgres` the first time.
-2. **Bring data stores up** — start Postgres on **55432** and Redis on **63790** (isolated from any system services), drop and recreate the app database, then create the schema from SQLAlchemy models and load [`backend/app/seed.py`](./backend/app/seed.py). The database is wiped on every start/stop, so editing `seed.py` is all you need to change the catalog.
-3. **Run both apps** — FastAPI on **8000** with `uvicorn --reload`, Next on **3000** with `next dev`.
+1. **Bootstrap** — `cargo build` the API, `npm install` the frontend, copy `.env.example` → `.env` if needed, and `initdb` a Postgres cluster in `./.data/postgres` the first time.
+2. **Bring data stores up** — start Postgres on **55432** and Redis on **63790** (isolated from any system services), drop and recreate the app database, then create the schema from [`backend/src/schema.sql`](./backend/src/schema.sql) and load [`backend/src/seed.rs`](./backend/src/seed.rs). The database is wiped on every start/stop, so editing `seed.rs` is all you need to change the catalog.
+3. **Run both apps** — Axum API on **8000** (`cargo run`), Next on **3000** with `next dev`.
 
 - **App:** <http://127.0.0.1:3000>
-- **API health:** <http://127.0.0.1:8000/api/health>  
-- **OpenAPI JSON:** <http://127.0.0.1:8000/openapi.json>
+- **API health:** <http://127.0.0.1:8000/api/health>
 
 `Ctrl-C` stops the web stack **and** Postgres/Redis for this project so nothing keeps running. If something dies badly, `make stop` is a hard teardown.
 
@@ -34,22 +33,22 @@ This will:
 
 | Target | What it does |
 |--------|----------------|
-| `make setup` | Bootstrap only (venv, npm, .env, `initdb` if new). |
+| `make setup` | Bootstrap only (cargo build, npm, .env, `initdb` if new). |
 | `make services-up` / `make services-down` | Start/stop only Postgres+Redis in `./.data/`. |
 | `make stop` | `services-down` + kill anything still listening on the app/db/cache ports. |
 | `make nuke-confirm` | `stop` + delete `./.data/` (fresh `initdb` on next `make dev`). |
 | `make psql` | `psql` into the project database. |
 | `make redis-cli` | `redis-cli` to the project Redis. |
-| `make test` | Run backend (`pytest`) and frontend (`vitest`) unit tests. Requires `make setup` first. |
-| `make test-coverage` | Same as `make test`, with coverage reports (terminal + HTML). No minimum thresholds. |
+| `make test` | Run backend (`cargo test`) and frontend (`vitest`) unit tests. Requires `make setup` first. |
+| `make test-coverage` | Same as `make test`, with coverage reports where available. No minimum thresholds. |
 | `make test-backend` | Backend tests only. |
-| `make test-backend-coverage` | Backend tests with coverage → `backend/htmlcov/`. |
+| `make test-backend-coverage` | Backend tests (falls back to `cargo test` if `cargo-llvm-cov` is not installed). |
 | `make test-frontend` | Frontend tests only. |
 | `make test-frontend-coverage` | Frontend tests with coverage → `frontend/coverage/`. |
 
 ### Tests and coverage
 
-- **Backend:** from the repo root, `make setup` then `make services-up` so Postgres (**55432**) and Redis (**63790**) are listening. API integration tests skip automatically if those ports are closed. Coverage HTML: [`backend/htmlcov/index.html`](./backend/htmlcov/index.html) after `make test-backend-coverage`.
+- **Backend:** from the repo root, `make setup` then `make services-up` so Postgres (**55432**) and Redis (**63790**) are listening. Integration tests skip automatically if those ports are closed.
 - **Frontend:** `cd frontend && npm run test` or `make test-frontend`. Coverage HTML: [`frontend/coverage/index.html`](./frontend/coverage/index.html) after `make test-frontend-coverage`.
 - Coverage is **report-only** (no enforced minimum gate).
 
@@ -69,13 +68,13 @@ Optional **in-app Dev mode** (toggle in the UI) can open a **Cursor Cloud agent*
 
 1. Run `make dev`, open the shop, add an item, open the cart sheet, and place a **mock** order. Show **Network** for `POST /api/checkout` and the success page. Optional: `make psql` and `select * from orders;`.
 2. Change copy or layout in `frontend/src/app/shop/page.tsx` and save — Fast Refresh should update immediately.
-3. Tweak a response in `backend/app/routers/chocolates.py` (e.g. an extra field on the Pydantic model) — `uvicorn --reload` should pick it up; refresh the list.
+3. Tweak a response in `backend/src/routes/chocolates.rs` (e.g. an extra field on `ChocolateOut`) — restart the backend; refresh the list.
 4. In Redis CLI, run `KEYS chocolates:*` after loading `/api/chocolates` twice to show server-side list caching.
 5. `Ctrl-C` to prove nothing is left on the ports: `lsof -i :55432 -i :63790 -i :8000 -i :3000` should be empty (after any browser tabs close; Next may need a second for cleanup).
 
 ## Layout
 
-- [`backend/`](./backend) — FastAPI, SQLAlchemy (async). Schema is created from the models each run by [`app/init_db.py`](./backend/app/init_db.py); catalog data lives in [`app/seed.py`](./backend/app/seed.py).
+- [`backend/`](./backend) — Axum + sqlx (async). Schema is created each run by [`src/bin/init_db.rs`](./backend/src/bin/init_db.rs); catalog data lives in [`src/seed.rs`](./backend/src/seed.rs).
 - [`frontend/`](./frontend) — Next.js, TanStack Query, cart/saved in `localStorage` under `cs.cart.v1` and `cs.saved.v1` ([`src/context/shop-state.tsx`](./frontend/src/context/shop-state.tsx)).
 - [`scripts/`](./scripts) — `bootstrap.sh`, `services-up.sh`, `services-down.sh`, `dev.sh`, `stop.sh`, `nuke.sh`.
 

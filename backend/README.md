@@ -1,6 +1,6 @@
 # chocolate-store API
 
-Run from the repository root: `make dev` (not stand-alone). This package is installed in editable mode into `backend/.venv` by `make setup`.
+Run from the repository root: `make dev` (not stand-alone). The backend is a Rust crate built by `make setup`.
 
 Environment variables are loaded from the repo root `.env` (see `../.env.example`).
 
@@ -10,7 +10,14 @@ From the repo root, after `make setup` and with Postgres/Redis up (`make service
 
 ```bash
 make test-backend
-make test-backend-coverage   # writes backend/htmlcov/
 ```
 
-Or from `backend/`: `./.venv/bin/pytest` (coverage is enabled by default via `pyproject.toml`).
+Or from `backend/`: `cargo test`.
+
+## Init DB
+
+Schema and seed data are loaded on every `make services-up`:
+
+```bash
+cargo run --bin init_db
+```

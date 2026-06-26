@@ -1,6 +1,6 @@
 # Bugbot review guide — chocolate-store
 
-This repo is a demo marketplace: **Next.js 15 + FastAPI + Postgres + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
+This repo is a demo marketplace: **Next.js 15 + Axum (Rust) + Postgres + Redis**. No real user accounts; checkout is mock; the social feed uses demo identities via `X-Demo-User-Id`.
 
 Use this file to tune PR reviews. Focus on **real bugs and regressions**, not style nitpicks.
 
@@ -19,7 +19,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 - **Missing input validation** — request bodies bypassing Pydantic schemas or accepting unbounded strings/lists.
 - **Broken demo-user authorization** — social write endpoints that ignore `X-Demo-User-Id` or allow acting as another user without checks.
 - **Secrets in code** — hardcoded API keys, tokens, or real credentials (`.env` values belong in env vars only).
-- **Schema/seed drift** — changes to `backend/app/schemas/` without matching updates to `backend/app/seed.py` or SQLAlchemy models.
+- **Schema/seed drift** — changes to `backend/src/dto.rs` or `backend/src/schema.sql` without matching updates to `backend/src/seed.rs`.
 - **Unhandled async errors** — missing `try/except` around DB/Redis calls that can leave sessions open or return 500s for predictable validation failures.
 - **Cache correctness** — Redis cache keys or TTL changes that could serve stale catalog data after writes.
 
@@ -33,7 +33,7 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 
 ### Cross-cutting
 
-- **New API endpoints without tests** — backend router changes should include or update pytest coverage under `backend/tests/`.
+- **New API endpoints without tests** — backend route changes should include or update integration tests under `backend/tests/`.
 - **CI breakage** — changes that would fail `backend-tests` or `frontend-tests` GitHub Actions workflows.
 
 ## Usually ignore (demo scope)
@@ -49,8 +49,8 @@ Use this file to tune PR reviews. Focus on **real bugs and regressions**, not st
 
 | Area changed | Expect |
 |--------------|--------|
-| `backend/app/routers/**` | New or updated tests in `backend/tests/` |
-| `backend/app/schemas/**` | Sync `backend/app/seed.py` if output shape changed |
+| `backend/src/routes/**` | New or updated tests in `backend/tests/` |
+| `backend/src/dto.rs` | Sync `backend/src/seed.rs` if output shape changed |
 | `frontend/src/app/api/**` | Vitest route tests alongside the handler |
 | `frontend/src/components/**` | Tests when behavior is non-trivial (follow existing `*.test.tsx` patterns) |
 
@@ -68,11 +68,11 @@ Link out to detailed rule files when you want scoped guidance. Bugbot follows th
 
 Use language like this when reporting:
 
-> **Schema/seed drift:** `ChocolateOut` gained a required field but `seed.py` was not updated. Catalog seed will fail validation on startup.
+> **Schema/seed drift:** `ChocolateOut` gained a required field but `seed.rs` was not updated. Catalog seed will fail on startup.
 
 > **IDOR on social API:** `DELETE /api/posts/{id}` does not verify the post author matches `X-Demo-User-Id`.
 
-> **Missing test:** New `POST /api/checkout` validation branch has no pytest coverage.
+> **Missing test:** New `POST /api/checkout` validation branch has no integration test coverage.
 
 ## False positives to suppress
 
@@ -80,7 +80,7 @@ If you see these, do **not** comment:
 
 - `CURSOR_API_KEY` read only in server routes under `frontend/src/app/api/dev-mode/`
 - CORS permissive settings in local dev config
-- Hardcoded demo user IDs in `seed.py`
+- Hardcoded demo user IDs in `seed.rs`
 - `console.log` in Dev mode components
 
 When a finding is wrong, resolve the thread and update this file so it does not recur.

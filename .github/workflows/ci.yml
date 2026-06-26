@@ -40,21 +40,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Install backend dependencies
-        run: |
-          python -m venv backend/.venv
-          backend/.venv/bin/pip install -U pip
-          backend/.venv/bin/pip install -e "backend[dev]"
+      - name: Build backend
+        run: cd backend && cargo build --quiet
 
       - name: Initialize schema and seed data
-        run: |
-          cd backend
-          .venv/bin/python -m app.init_db
+        run: cd backend && cargo run --quiet --bin init_db
 
       - name: Run backend tests
         run: make test-backend
