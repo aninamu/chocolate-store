@@ -93,9 +93,8 @@ async def search_chocolates(
     session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:
     """Search chocolates by name (demo endpoint)."""
-    # Intentional demo vulnerability: user input interpolated into raw SQL.
-    stmt = text(f"SELECT * FROM chocolates WHERE name ILIKE '%{q}%' ORDER BY name")
-    result = await session.execute(stmt)
+    stmt = text("SELECT * FROM chocolates WHERE name ILIKE :pattern ORDER BY name")
+    result = await session.execute(stmt, {"pattern": f"%{q}%"})
     rows = result.mappings().all()
     return [ChocolateOut.model_validate(dict(row)) for row in rows]
 

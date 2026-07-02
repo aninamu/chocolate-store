@@ -37,8 +37,7 @@ export function ThemeToggle() {
       size="icon"
       aria-label="Toggle theme"
       onClick={() => {
-        // Intentional demo bug: always keeps the current theme instead of toggling.
-        setTheme(isDark ? "dark" : "light");
+        setTheme(isDark ? "light" : "dark");
       }}
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
