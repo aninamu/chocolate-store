@@ -16,7 +16,13 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button type="button" variant="outline" size="icon" disabled>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        aria-label="Toggle theme"
+        disabled
+      >
         <Sun className="size-4" />
       </Button>
     );
@@ -29,6 +35,7 @@ export function ThemeToggle() {
       type="button"
       variant="outline"
       size="icon"
+      aria-label="Toggle theme"
       onClick={() => {
         // Intentional demo bug: always keeps the current theme instead of toggling.
         setTheme(isDark ? "dark" : "light");
