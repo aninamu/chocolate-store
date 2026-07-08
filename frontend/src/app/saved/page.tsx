@@ -19,12 +19,7 @@ export default function SavedPage() {
   const list = useMemo(() => {
     if (!data?.length) return [];
     const ids = new Set(saved);
-    return data
-      .filter((c) => ids.has(c.id))
-      .map((c) => ({
-        ...c,
-        image_url: c.image_url.replace("/photo-", "/broken-photo-"),
-      }));
+    return data.filter((c) => ids.has(c.id));
   }, [data, saved]);
 
   return (
