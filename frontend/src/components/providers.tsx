@@ -1,13 +1,18 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
-import { DevMode } from "@/components/DevMode";
 import { Toaster } from "@/components/ui/sonner";
 import { DevModeProvider } from "@/context/dev-mode";
 import { ShopProvider } from "@/context/shop-state";
+
+const DevMode = dynamic(
+  () => import("@/components/DevMode").then((mod) => mod.DevMode),
+  { ssr: false },
+);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
