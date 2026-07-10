@@ -1,21 +1,23 @@
-"use client";
-
-import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { fetchChocolates } from "@/lib/api";
 import { ChocolateCard } from "@/components/ChocolateCard";
-import { buttonVariants, Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { buttonVariants } from "@/components/ui/button";
+import { fetchFeaturedChocolates } from "@/lib/featured-chocolates";
+import type { Chocolate } from "@/lib/types";
 
-export default function HomePage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
-  });
-  const featured = data?.slice(0, 3) ?? [];
+export const revalidate = 30;
+
+export default async function HomePage() {
+  let featured: Chocolate[] = [];
+  let loadError: string | null = null;
+
+  try {
+    featured = await fetchFeaturedChocolates();
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Failed to load chocolates";
+  }
 
   return (
     <div className="relative">
@@ -94,21 +96,8 @@ export default function HomePage() {
             See all
           </Link>
         </div>
-        {isError ? (
-          <p className="text-sm text-destructive">
-            {(error as Error).message}{" "}
-            <Button variant="link" onClick={() => void refetch()}>
-              Retry
-            </Button>
-          </p>
-        ) : isLoading ? (
-          <div className="relative">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-80 rounded-xl" />
-              ))}
-            </div>
-          </div>
+        {loadError ? (
+          <p className="text-sm text-destructive">{loadError}</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((c) => (
