@@ -12,6 +12,9 @@ logs/
 .coverage
 **/.coverage
 backend/htmlcov/
+backend/target/
+.cargo-home/
+.rustup-home/
 frontend/coverage/
 **/.mypy_cache/
 **/*.egg-info/
@@ -35,3 +38,6 @@ frontend/coverage/
 !.cursor/skills/sync-seed-with-schema/
 .cursor/skills/sync-seed-with-schema/*
 !.cursor/skills/sync-seed-with-schema/SKILL.md
+!.cursor/skills/backend-api-test-coverage/
+.cursor/skills/backend-api-test-coverage/*
+!.cursor/skills/backend-api-test-coverage/SKILL.md
