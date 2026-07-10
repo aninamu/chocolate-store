@@ -27,6 +27,12 @@ export async function fetchChocolate(id: string): Promise<Chocolate> {
   return res.json() as Promise<Chocolate>;
 }
 
+export async function fetchChocolatesByIds(ids: string[]): Promise<Chocolate[]> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return [];
+  return Promise.all(unique.map((id) => fetchChocolate(id)));
+}
+
 export async function postCheckout(
   body: CheckoutPayload
 ): Promise<CheckoutResponse> {

@@ -3,10 +3,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { fetchChocolates, postCheckout } from "@/lib/api";
+import { useMemo } from "react";
+
+import { fetchChocolatesByIds, postCheckout } from "@/lib/api";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +20,11 @@ export default function CheckoutPage() {
   const { cart, clearCart, isReady } = useShop();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const cartIds = useMemo(() => cart.map((l) => l.chocolateId), [cart]);
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["chocolates", "all"],
-    queryFn: () => fetchChocolates(),
+    queryKey: ["chocolates", "cart", cartIds],
+    queryFn: () => fetchChocolatesByIds(cartIds),
     enabled: cart.length > 0,
   });
   const byId = new Map(products?.map((p) => [p.id, p]) ?? []);

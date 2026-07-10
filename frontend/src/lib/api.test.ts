@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchChocolate,
   fetchChocolates,
+  fetchChocolatesByIds,
   postCheckout,
 } from "@/lib/api";
 
@@ -72,6 +73,37 @@ describe("fetchChocolate", () => {
     );
 
     await expect(fetchChocolate("abc")).rejects.toThrow("Not found");
+  });
+});
+
+describe("fetchChocolatesByIds", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const id = String(input).split("/").pop();
+        return Promise.resolve(
+          new Response(JSON.stringify({ id, price_cents: 100 }), {
+            status: 200,
+          })
+        );
+      })
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fetches only the requested ids in parallel", async () => {
+    const ids = ["a", "b", "a"];
+    const out = await fetchChocolatesByIds(ids);
+    expect(out).toHaveLength(2);
+    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns empty array when no ids are provided", async () => {
+    await expect(fetchChocolatesByIds([])).resolves.toEqual([]);
+    expect(vi.mocked(globalThis.fetch)).not.toHaveBeenCalled();
   });
 });
 
