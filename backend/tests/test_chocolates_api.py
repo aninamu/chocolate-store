@@ -35,6 +35,20 @@ def test_list_chocolates_sort_price_asc(api_client: TestClient) -> None:
     assert prices == sorted(prices)
 
 
+def test_list_chocolates_id_filter(api_client: TestClient) -> None:
+    listed = api_client.get("/api/chocolates")
+    assert listed.status_code == 200
+    all_items = listed.json()
+    assert len(all_items) >= 2
+    wanted = all_items[:2]
+    params = [("id", row["id"]) for row in wanted]
+    r = api_client.get("/api/chocolates", params=params)
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 2
+    assert {row["id"] for row in items} == {row["id"] for row in wanted}
+
+
 def test_get_chocolate_detail_and_404(api_client: TestClient) -> None:
     listed = api_client.get("/api/chocolates")
     assert listed.status_code == 200

@@ -32,11 +32,14 @@ async def checkout(
         session.add(order)
         await session.flush()
 
+        ids = [line.chocolate_id for line in body.items]
+        res = await session.execute(
+            select(Chocolate).where(Chocolate.id.in_(ids))
+        )
+        by_id = {ch.id: ch for ch in res.scalars().all()}
+
         for line in body.items:
-            res = await session.execute(
-                select(Chocolate).where(Chocolate.id == line.chocolate_id)
-            )
-            ch = res.scalar_one_or_none()
+            ch = by_id.get(line.chocolate_id)
             if ch is None:
                 raise HTTPException(
                     status_code=400, detail=f"Unknown chocolate {line.chocolate_id}"
