@@ -42,6 +42,26 @@ def test_checkout_success(api_client: TestClient) -> None:
     assert out["total_cents"] == ch["price_cents"] * 2
 
 
+def test_checkout_multiple_items(api_client: TestClient) -> None:
+    listed = api_client.get("/api/chocolates")
+    assert listed.status_code == 200
+    chocolates = listed.json()[:3]
+    assert len(chocolates) == 3
+
+    payload = {
+        "customer_name": "Test User",
+        "customer_email": "multi@example.com",
+        "items": [
+            {"chocolate_id": ch["id"], "quantity": 2} for ch in chocolates
+        ],
+    }
+    r = api_client.post("/api/checkout", json=payload)
+    assert r.status_code == 200
+    out = r.json()
+    expected = sum(ch["price_cents"] * 2 for ch in chocolates)
+    assert out["total_cents"] == expected
+
+
 def test_checkout_unknown_chocolate(api_client: TestClient) -> None:
     bad_id = str(uuid.uuid4())
     payload = {

@@ -27,10 +27,13 @@ def _normalize_sort_key(sort: str | None) -> str:
     return "name"
 
 
-def _list_cache_key(tag: list[str] | None, sort: str | None) -> str:
+def _list_cache_key(
+    tag: list[str] | None, sort: str | None, ids: list[UUID] | None
+) -> str:
     t = tag or []
     tkey = ",".join(sorted(x.strip() for x in t if x and x.strip()))
-    return f"chocolates:list:{tkey}:{_normalize_sort_key(sort)}"
+    ikey = ",".join(sorted(str(x) for x in (ids or [])))
+    return f"chocolates:list:{tkey}:{ikey}:{_normalize_sort_key(sort)}"
 
 
 def _detail_cache_key(cid: UUID) -> str:
@@ -43,13 +46,17 @@ async def list_chocolates(
         default_factory=list,
         description="Repeat `tag=`; OR semantics: chocolate must include at least one listed tag.",
     ),
+    id: list[UUID] = Query(
+        default_factory=list,
+        description="Repeat `id=` to return only the listed chocolates.",
+    ),
     sort: str | None = Query(
         "name",
         description="name | price_asc | price_desc | cacao_desc",
     ),
     session: AsyncSession = Depends(get_db),
 ) -> list[ChocolateOut]:
-    key = _list_cache_key(tag, sort)
+    key = _list_cache_key(tag, sort, id)
     raw = await cache_get(key)
     if raw:
         try:
@@ -60,6 +67,8 @@ async def list_chocolates(
 
     cleaned = [t.strip() for t in (tag or []) if t and t.strip()]
     stmt: Select[tuple[Chocolate]] = select(Chocolate)
+    if id:
+        stmt = stmt.where(Chocolate.id.in_(id))
     if cleaned:
         literals = [literal(s, type_=String(64)) for s in cleaned]
         any_of = array(literals)
