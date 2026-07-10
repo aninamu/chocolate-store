@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  fetchCartChocolates,
   fetchChocolate,
   fetchChocolates,
   postCheckout,
@@ -48,6 +49,43 @@ describe("fetchChocolates", () => {
     );
 
     await expect(fetchChocolates()).rejects.toThrow("Failed to load chocolates");
+  });
+
+  it("appends repeated id params when ids are provided", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+
+    await fetchChocolates({
+      ids: [
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
+      ],
+    });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain("id=00000000-0000-4000-8000-000000000001");
+    expect(url).toContain("id=00000000-0000-4000-8000-000000000002");
+  });
+});
+
+describe("fetchCartChocolates", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(new Response(JSON.stringify([]), { status: 200 }))
+      )
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns empty list without calling fetch when ids are empty", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    const out = await fetchCartChocolates([]);
+    expect(out).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
