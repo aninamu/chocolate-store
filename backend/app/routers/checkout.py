@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db
-from app.models.chocolate import Chocolate, Order, OrderItem
+from app.repositories.chocolates import ChocolateRepository
+from app.repositories.factory import get_chocolate_repo, get_order_repo
+from app.repositories.orders import OrderRepository
 from app.schemas.chocolate import CheckoutIn, CheckoutOut
 
 router = APIRouter()
@@ -14,49 +13,17 @@ router = APIRouter()
 @router.post("/checkout", response_model=CheckoutOut)
 async def checkout(
     body: CheckoutIn,
-    session: AsyncSession = Depends(get_db),
+    order_repo: OrderRepository = Depends(get_order_repo),
+    chocolate_repo: ChocolateRepository = Depends(get_chocolate_repo),
 ) -> CheckoutOut:
     name = body.customer_name.strip()
     if not name:
         raise HTTPException(
             status_code=400, detail="customer_name must not be empty or whitespace"
         )
-    async with session.begin():
-        total = 0
-        order = Order(
-            customer_name=name,
-            customer_email=str(body.customer_email).lower(),
-            total_cents=0,
-            status="paid",
-        )
-        session.add(order)
-        await session.flush()
-
-        for line in body.items:
-            res = await session.execute(
-                select(Chocolate).where(Chocolate.id == line.chocolate_id)
-            )
-            ch = res.scalar_one_or_none()
-            if ch is None:
-                raise HTTPException(
-                    status_code=400, detail=f"Unknown chocolate {line.chocolate_id}"
-                )
-            if not ch.in_stock:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"{ch.name} is out of stock",
-                )
-            line_total = ch.price_cents * line.quantity
-            total += line_total
-            session.add(
-                OrderItem(
-                    order_id=order.id,
-                    chocolate_id=ch.id,
-                    quantity=line.quantity,
-                    unit_price_cents=ch.price_cents,
-                )
-            )
-
-        order.total_cents = total
-
-    return CheckoutOut(order_id=order.id, total_cents=total)
+    return await order_repo.create_checkout(
+        customer_name=name,
+        customer_email=str(body.customer_email),
+        items=body.items,
+        chocolate_repo=chocolate_repo,
+    )
