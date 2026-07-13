@@ -1,10 +1,14 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 
-import { DevMode } from "@/components/DevMode";
+const DevMode = dynamic(
+  () => import("@/components/DevMode").then((m) => m.DevMode),
+  { ssr: false }
+);
 import { Toaster } from "@/components/ui/sonner";
 import { DevModeProvider } from "@/context/dev-mode";
 import { ShopProvider } from "@/context/shop-state";
