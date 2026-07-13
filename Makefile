@@ -1,7 +1,8 @@
 ROOT := $(abspath .)
 
-.PHONY: dev setup services-up services-down stop nuke psql redis-cli nuke-confirm \
-	test test-coverage test-backend test-backend-coverage test-frontend test-frontend-coverage
+.PHONY: dev setup services-up services-down stop nuke psql redis-cli mongo-shell nuke-confirm \
+	test test-coverage test-backend test-backend-coverage test-frontend test-frontend-coverage \
+	backfill-mongo reconcile
 
 # Full stack: bootstrap → data stores → app servers (stops all on Ctrl-C)
 dev:
@@ -10,7 +11,7 @@ dev:
 	@./scripts/services-up.sh
 	@exec ./scripts/dev.sh
 
-# One-time or repeated setup (venv, npm, .env, initdb dir)
+# One-time or repeated setup (venv, npm, .env, data dirs)
 setup:
 	@chmod +x $(ROOT)/scripts/*.sh
 	@./scripts/bootstrap.sh
@@ -36,11 +37,22 @@ nuke:
 psql:
 	@set -a && [ -f .env ] && . ./.env && set +a && \
 		. ./scripts/postgres-path.sh && add_postgres_bin_to_path; \
-		psql -h 127.0.0.1 -p "$$PG_PORT" -U "$$PG_USER" -d "$$PG_DB"
+		psql -h 127.0.0.1 -p "$${PG_PORT:-55432}" -U "$${PG_USER:-chocolate}" -d "$${PG_DB:-chocolate_store}"
+
+mongo-shell:
+	@set -a && [ -f .env ] && . ./.env && set +a && \
+		docker exec -it chocolate-store-mongo mongosh "$${MONGODB_URL:-mongodb://127.0.0.1:27017/chocolate_store}" \
+		|| mongosh "$${MONGODB_URL:-mongodb://127.0.0.1:27017/chocolate_store}"
 
 redis-cli:
 	@set -a && [ -f .env ] && . ./.env && set +a && \
 		redis-cli -p "$$REDIS_PORT"
+
+backfill-mongo:
+	@cd $(ROOT)/backend && ./.venv/bin/python -m scripts.backfill_mongo
+
+reconcile:
+	@cd $(ROOT)/backend && ./.venv/bin/python -m scripts.reconcile --domain all --mode full
 
 # Tests (run `make setup` first so backend/.venv and frontend/node_modules exist)
 test-backend:

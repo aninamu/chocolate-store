@@ -1,28 +1,36 @@
 from __future__ import annotations
 
-import os
 import uuid
 
-from sqlalchemy import create_engine, text
+from bson.binary import Binary, UuidRepresentation
+from pymongo import MongoClient
 from starlette.testclient import TestClient
 
-
-def _sync_engine():
-    raw = os.environ["DATABASE_URL"]
-    sync_url = raw.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
-    return create_engine(sync_url)
+from app.config import settings
 
 
-def _set_in_stock_sync(cid: uuid.UUID, in_stock: bool) -> None:
-    eng = _sync_engine()
+def _set_in_stock(cid: uuid.UUID, in_stock: bool) -> None:
+    """Flip stock via sync PyMongo to avoid AsyncMongoClient event-loop binding."""
+    client = MongoClient(
+        settings.mongodb_url,
+        uuidRepresentation="standard",
+    )
     try:
-        with eng.begin() as conn:
-            conn.execute(
-                text("UPDATE chocolates SET in_stock = :flag WHERE id = :cid"),
-                {"flag": in_stock, "cid": cid},
+        db_name = settings.mongodb_url.rsplit("/", 1)[-1] or "chocolate_store"
+        result = client[db_name]["chocolates"].update_one(
+            {"_id": Binary.from_uuid(cid, UuidRepresentation.STANDARD)},
+            {"$set": {"in_stock": in_stock}},
+        )
+        if result.matched_count == 0:
+            # Fallback: Beanie may store UUID as a string depending on config.
+            result = client[db_name]["chocolates"].update_one(
+                {"_id": str(cid)},
+                {"$set": {"in_stock": in_stock}},
             )
+        if result.matched_count == 0:
+            raise AssertionError(f"chocolate {cid} not found in Mongo")
     finally:
-        eng.dispose()
+        client.close()
 
 
 def test_checkout_success(api_client: TestClient) -> None:
@@ -60,7 +68,7 @@ def test_checkout_out_of_stock(api_client: TestClient) -> None:
     ch = listed.json()[0]
     cid = uuid.UUID(str(ch["id"]))
 
-    _set_in_stock_sync(cid, False)
+    _set_in_stock(cid, False)
     try:
         payload = {
             "customer_name": "Test User",
@@ -72,4 +80,4 @@ def test_checkout_out_of_stock(api_client: TestClient) -> None:
         detail = (r.json().get("detail") or "").lower()
         assert "stock" in detail
     finally:
-        _set_in_stock_sync(cid, True)
+        _set_in_stock(cid, True)
