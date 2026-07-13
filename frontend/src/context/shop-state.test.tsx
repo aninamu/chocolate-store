@@ -12,6 +12,7 @@ function Harness() {
     addToCart,
     setQty,
     clearCart,
+    removeFromCart,
     toggleSaved,
     isSaved,
   } = useShop();
@@ -29,6 +30,12 @@ function Harness() {
       </button>
       <button type="button" onClick={() => setQty("c2", 5)}>
         set-c2-5
+      </button>
+      <button type="button" onClick={() => setQty("c2", 0)}>
+        set-c2-0
+      </button>
+      <button type="button" onClick={() => removeFromCart("c2")}>
+        remove-c2
       </button>
       <button type="button" onClick={() => clearCart()}>
         clear
@@ -183,6 +190,135 @@ describe("ShopProvider", () => {
         { chocolateId: "c2", quantity: 2 },
         { chocolateId: "c3", quantity: 1 },
       ]);
+    });
+  });
+
+  it("removeFromCart drops a line and persists", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 2 },
+      ])
+    );
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "remove-c2" }));
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([{ chocolateId: "c1", quantity: 1 }]);
+    });
+    expect(JSON.parse(localStorage.getItem("cs.cart.v1") || "[]")).toEqual([
+      { chocolateId: "c1", quantity: 1 },
+    ]);
+  });
+
+  it("clearCart empties cart and persists", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([{ chocolateId: "c1", quantity: 3 }])
+    );
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "clear" }));
+    await waitFor(() =>
+      expect(view.getByTestId("cart").textContent).toBe("[]")
+    );
+    expect(localStorage.getItem("cs.cart.v1")).toBe("[]");
+  });
+
+  it("setQty to zero removes the line", async () => {
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([
+        { chocolateId: "c1", quantity: 1 },
+        { chocolateId: "c2", quantity: 2 },
+      ])
+    );
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    await user.click(within(container).getByRole("button", { name: "set-c2-0" }));
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([{ chocolateId: "c1", quantity: 1 }]);
+    });
+  });
+
+  it("falls back to empty cart when localStorage JSON is corrupt", async () => {
+    localStorage.setItem("cs.cart.v1", "{not-json");
+
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+    expect(view.getByTestId("cart").textContent).toBe("[]");
+  });
+
+  it("syncs cart from storage events in other tabs", async () => {
+    const { container } = render(
+      <ShopProvider>
+        <Harness />
+      </ShopProvider>
+    );
+    const view = within(container);
+
+    await waitFor(() =>
+      expect(view.getByTestId("ready").textContent).toBe("true")
+    );
+
+    localStorage.setItem(
+      "cs.cart.v1",
+      JSON.stringify([{ chocolateId: "remote", quantity: 4 }])
+    );
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "cs.cart.v1",
+        newValue: JSON.stringify([{ chocolateId: "remote", quantity: 4 }]),
+      })
+    );
+
+    await waitFor(() => {
+      const cart = JSON.parse(view.getByTestId("cart").textContent || "[]");
+      expect(cart).toEqual([{ chocolateId: "remote", quantity: 4 }]);
     });
   });
 });

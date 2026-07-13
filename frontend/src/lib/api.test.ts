@@ -49,6 +49,16 @@ describe("fetchChocolates", () => {
 
     await expect(fetchChocolates()).rejects.toThrow("Failed to load chocolates");
   });
+
+  it("includes sort query param when provided", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://api.test");
+
+    await fetchChocolates({ sort: "price_asc" });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain("sort=price_asc");
+  });
 });
 
 describe("fetchChocolate", () => {
@@ -72,6 +82,14 @@ describe("fetchChocolate", () => {
     );
 
     await expect(fetchChocolate("abc")).rejects.toThrow("Not found");
+  });
+
+  it("throws on non-404 error responses", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response("", { status: 500 })
+    );
+
+    await expect(fetchChocolate("abc")).rejects.toThrow("Failed to load chocolate");
   });
 });
 
@@ -118,5 +136,26 @@ describe("postCheckout", () => {
         ],
       })
     ).rejects.toThrow("bad");
+  });
+
+  it("uses array detail messages from validation errors", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          detail: [{ msg: "invalid email" }, { msg: "empty cart" }],
+        }),
+        { status: 422 }
+      )
+    );
+
+    await expect(
+      postCheckout({
+        customer_name: "A",
+        customer_email: "bad",
+        items: [
+          { chocolate_id: "00000000-0000-4000-8000-000000000001", quantity: 1 },
+        ],
+      })
+    ).rejects.toThrow("invalid email · empty cart");
   });
 });
