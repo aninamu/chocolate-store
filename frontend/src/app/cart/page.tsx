@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { fetchChocolates } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
+import { ChocolateImage } from "@/components/ChocolateImage";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { useShop } from "@/context/shop-state";
 
@@ -63,11 +63,11 @@ export default function CartPage() {
           }
           return (
             <li key={l.chocolateId} className="flex flex-wrap items-center gap-4 bg-card/40 p-4 transition-colors hover:bg-muted/20 dark:hover:bg-muted/10">
-              <Image
+              <ChocolateImage
                 src={p.image_url}
                 width={80}
                 height={80}
-                alt=""
+                alt={p.name}
                 className="h-20 w-20 rounded-lg object-cover shadow-sm ring-1 ring-border/50"
               />
               <div className="min-w-0 flex-1">

@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Trash2 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 import { fetchChocolates } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
+import { ChocolateImage } from "@/components/ChocolateImage";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useShop } from "@/context/shop-state";
@@ -51,11 +51,11 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                   className="flex gap-3 rounded-lg border-b border-border/50 pb-3 last:border-0"
                 >
                   {p ? (
-                    <Image
+                    <ChocolateImage
                       src={p.image_url}
                       width={64}
                       height={64}
-                      alt=""
+                      alt={p.name}
                       className="h-16 w-16 rounded-lg object-cover shadow-sm ring-1 ring-border/50"
                     />
                   ) : (

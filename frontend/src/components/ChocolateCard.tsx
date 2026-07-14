@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { Chocolate } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
 import { AddToCartControl } from "@/components/AddToCartControl";
+import { ChocolateImage } from "@/components/ChocolateImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -29,11 +30,11 @@ export function ChocolateCard({ chocolate: c, showQuote = false }: Props) {
       <CardHeader className="p-0">
         <Link href={`/shop/${c.id}`} className="block">
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-            <Image
+            <ChocolateImage
               src={c.image_url}
               alt={c.name}
               fill
-              className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               sizes="(max-width: 768px) 100vw, 25vw"
             />
             <div

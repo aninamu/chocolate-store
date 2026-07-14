@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { fetchChocolate } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { AddToCartControl } from "@/components/AddToCartControl";
+import { ChocolateImage } from "@/components/ChocolateImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,7 +62,7 @@ export default function ProductDetailPage() {
   return (
     <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
       <div className="relative aspect-square overflow-hidden rounded-2xl border border-border/70 bg-muted shadow-md ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
-        <Image
+        <ChocolateImage
           src={c.image_url}
           alt={c.name}
           fill
