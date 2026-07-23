@@ -175,6 +175,7 @@ describe("DevMode", () => {
       screen.getByRole("switch", { name: "Dev mode on" })
     ).toBeInTheDocument();
     expect(screen.getByTestId("dev-mode-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("dev-mode-rail")).toHaveClass("bg-card-01/95");
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
