@@ -1384,7 +1384,7 @@ function DevModeRightRail() {
       data-dev-mode-ui=""
       data-testid="dev-mode-rail"
       aria-label="Dev mode panel"
-      className="bg-card/95 supports-backdrop-filter:bg-card/80 fixed top-0 right-0 z-[35] flex h-dvh w-72 flex-col overflow-hidden border-l border-border shadow-sm backdrop-blur-md max-md:hidden"
+      className="bg-card-01/95 supports-backdrop-filter:bg-card-01/80 fixed top-0 right-0 z-[35] flex h-dvh w-72 flex-col overflow-hidden border-l border-border shadow-sm backdrop-blur-md max-md:hidden"
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
